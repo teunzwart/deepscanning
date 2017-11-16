@@ -1,0 +1,7 @@
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
+
+const double PI = 3.141592653589793238462643;
+const double one_over_PI = 0.3183098861837906715377675;
+
+#endif // CONSTANTS_H

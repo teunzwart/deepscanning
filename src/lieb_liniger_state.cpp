@@ -6,10 +6,14 @@
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <numeric>
+#include <random>
 #include <vector>
 
-
+/**
+ * Construct a Bethe state with Bethe numbers of the ground state.
+ */
 lieb_liniger_state::lieb_liniger_state(double new_c, double new_L,
                                        int new_N)
     : c(new_c),
@@ -22,6 +26,9 @@ lieb_liniger_state::lieb_liniger_state(double new_c, double new_L,
     generate_gs_bethe_numbers();
 }
 
+/**
+ * Construct a Bethe state with arbitrary Bethe numbers.
+ */
 lieb_liniger_state::lieb_liniger_state(double new_c, double new_L,
                                        int new_N,
                                        std::vector<double> new_Is)
@@ -51,7 +58,7 @@ void lieb_liniger_state::generate_gs_bethe_numbers() {
  * Calculate the rapidities of the N particle Lieb-Liniger state.
  *
  * We use a multi-dimensional Newton method, where for a function F
- * we have \f$J_F(x_n) (x_{n+1} - x_n) = - F(x_n)\f$, with \f$J_\fF$ the 
+ * we have \f$J_F(x_n) (x_{n+1} - x_n) = - F(x_n)\f$, with \f$J_F\f$ the 
  * Jacobian, which in this case is the Gaudin matrix. 
  */
 void lieb_liniger_state::calculate_rapidities() {
@@ -59,31 +66,24 @@ void lieb_liniger_state::calculate_rapidities() {
     std::transform(Is.begin(), Is.end(), lambdas.begin(),
                    [this](double I){return 2 * PI / L * I;});
 
+    // TODO: implement a convergence criterium.
     for (int t = 0; t < 20; t++) {
-        // Calculate the RHS values of the Bethe equations
-        Eigen::MatrixXd rhs_bethe_equations = Eigen::MatrixXd(N, 1);
-        rhs_bethe_equations.setZero();
+        // Calculate the Yang-Yang equation values.
+        Eigen::MatrixXd rhs_bethe_equations = Eigen::MatrixXd(N, 1).setZero();
         for (int j = 0; j < N; j++) {
             for (int k = 0; k < N; k++) {
-                rhs_bethe_equations(j) += atan((lambdas[j] - lambdas[k]) / c);
+                rhs_bethe_equations(j) += 2 * atan((lambdas[j] - lambdas[k]) / c);
             }
-            rhs_bethe_equations(j) *= 1 / L;
-            rhs_bethe_equations(j) += lambdas[j] - 2 * PI / L * Is[j];
+            rhs_bethe_equations(j) += L * lambdas[j] - 2 * PI * Is[j];
         }
-        // std::cout << rhs_bethe_equations << std::endl;
 
+        // Perform a step of the Newton method.
         calculate_gaudin_matrix();
-        // std::cout << gaudin_matrix << std::endl;
-        Eigen::MatrixXd delta_lambda = gaudin_matrix.fullPivLu().solve(rhs_bethe_equations * -1);
-        // std::cout << delta_lambda << std::endl;
+        Eigen::MatrixXd delta_lambda = gaudin_matrix.fullPivLu().solve(-rhs_bethe_equations);
 
         for (int p = 0; p < N; p++) {
             lambdas[p] += delta_lambda(p);
         }
-        for (auto l: lambdas) {
-            std::cout << std::setprecision(16) << l << ", ";
-        }
-        std::cout << std::endl;
     }
 }
 
@@ -95,7 +95,7 @@ void lieb_liniger_state::calculate_gaudin_matrix() {
         for (std::vector<double>::size_type k = 0; k < lambdas.size(); k++) {
             if (j == k) {
                 double kernel_sum = L;
-                for(auto lambda: lambdas) {
+                for (auto lambda: lambdas) {
                     kernel_sum += kernel(lambdas[j] - lambda, c);
                 }
                 gaudin_matrix(j, k) = kernel_sum;
@@ -113,3 +113,35 @@ double lieb_liniger_state::kernel(double k, double c) {
     return 2 * c / (c * c + k * k);
 }
 
+/**
+ * Generate a vector of Bethe numbers distributed according to a
+ * Gaussian distribution, with only unique entries.
+ */
+std::vector<double> generate_bethe_numbers(int N) {
+    std::vector<double> bethe_numbers(N, -10e7);
+    double mean = 0;
+    double standard_dev = N * PI; // We assume that excitations still cluster around the ground state.
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+ 
+    std::normal_distribution<> normal_distribution(mean, standard_dev);
+    std::uniform_real_distribution<> sign_distribution(-1, 1);
+
+    // TODO: Make sure all entries are unique.
+    for (int n = 0; n < N; n++) {
+        double random_number = std::round(normal_distribution(gen));
+        // std::cout << "rand num " << random_number << std::endl;
+
+        // For N even Bethe numbers are half odd.
+        if (N % 2 == 0) {
+            bethe_numbers[n] = random_number + std::copysign(1, sign_distribution(gen)) * 0.5;            
+        } else {
+            bethe_numbers[n] = random_number;
+        }
+    }
+
+    std::sort(bethe_numbers.begin(), bethe_numbers.end());
+    
+    return bethe_numbers;
+}

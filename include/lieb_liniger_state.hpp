@@ -11,12 +11,12 @@
 class lieb_liniger_state
 {
 public:
-    double c;
-    double L;
-    int N;
-    std::vector<double> Is;
-    std::vector<double> lambdas;
-    Eigen::MatrixXd gaudin_matrix;
+    double c; ///< Interaction strength.
+    double L; ///< System size.
+    int N; ///< Number of particles
+    std::vector<double> Is; ///< Bethe numbers
+    std::vector<double> lambdas; ///< Rapidities
+    Eigen::MatrixXd gaudin_matrix; ///< The Gaudin matrix of the state.
     
     
     lieb_liniger_state(double new_c, double new_L, int new_N);
@@ -31,6 +31,8 @@ public:
 private:
     void generate_gs_bethe_numbers();
 };
+
+std::vector<double> generate_bethe_numbers(int N);
 
 
 #endif // LIEB_LINIGER_STATE_H
