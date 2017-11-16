@@ -1,5 +1,6 @@
 #include "constants.hpp"
 #include "lieb_liniger_state.hpp"
+#include "machine_learning.hpp"
 
 #include <Eigen/Dense>
 
@@ -54,6 +55,17 @@ void lieb_liniger_state::generate_gs_bethe_numbers() {
     }
 }
 
+void lieb_liniger_state::find_rapidities(bool use_machine_learning) {
+    if (!use_machine_learning) {
+        // Initial bad guess for the rapidities.
+        std::transform(Is.begin(), Is.end(), lambdas.begin(),
+                       [this](double I){return 2 * PI / L * I;});
+    } else {
+        lambdas = guess_rapidities(Is);
+    }
+    calculate_rapidities_newton();
+}
+
 /**
  * Calculate the rapidities of the N particle Lieb-Liniger state.
  *
@@ -64,13 +76,10 @@ void lieb_liniger_state::generate_gs_bethe_numbers() {
  * This function is largely inspired by the Find_Rapidities() function
  * for the Lieb-Liniger model found in the ABACUS library by J-S Caux. 
  */
-void lieb_liniger_state::calculate_rapidities() {
-    // Initial bad guess for the rapidities.
-    std::transform(Is.begin(), Is.end(), lambdas.begin(),
-                   [this](double I){return 2 * PI / L * I;});
-
+void lieb_liniger_state::calculate_rapidities_newton() {
     int no_of_iterations = 0;
     while (no_of_iterations < 20) {
+        no_of_iterations += 1;
         // Calculate the Yang-Yang equation values.
         Eigen::MatrixXd rhs_bethe_equations = Eigen::MatrixXd(N, 1).setZero();
         for (int j = 0; j < N; j++) {

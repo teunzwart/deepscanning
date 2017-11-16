@@ -23,10 +23,11 @@ public:
     lieb_liniger_state(double new_c, double new_L, int new_N,
                        std::vector<double> new_Is);
 
-    void calculate_rapidities();
+    void calculate_rapidities_newton();
     void calculate_gaudin_matrix();
     static double kernel(double k, double c);
 
+    void find_rapidities(bool use_machine_learning=false);
 
 private:
     void generate_gs_bethe_numbers();
