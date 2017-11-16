@@ -59,15 +59,18 @@ void lieb_liniger_state::generate_gs_bethe_numbers() {
  *
  * We use a multi-dimensional Newton method, where for a function F
  * we have \f$J_F(x_n) (x_{n+1} - x_n) = - F(x_n)\f$, with \f$J_F\f$ the 
- * Jacobian, which in this case is the Gaudin matrix. 
+ * Jacobian, which in this case is the Gaudin matrix.
+ *
+ * This function is largely inspired by the Find_Rapidities() function
+ * for the Lieb-Liniger model found in the ABACUS library by J-S Caux. 
  */
 void lieb_liniger_state::calculate_rapidities() {
     // Initial bad guess for the rapidities.
     std::transform(Is.begin(), Is.end(), lambdas.begin(),
                    [this](double I){return 2 * PI / L * I;});
 
-    // TODO: implement a convergence criterium.
-    for (int t = 0; t < 20; t++) {
+    int no_of_iterations = 0;
+    while (no_of_iterations < 20) {
         // Calculate the Yang-Yang equation values.
         Eigen::MatrixXd rhs_bethe_equations = Eigen::MatrixXd(N, 1).setZero();
         for (int j = 0; j < N; j++) {
@@ -81,8 +84,21 @@ void lieb_liniger_state::calculate_rapidities() {
         calculate_gaudin_matrix();
         Eigen::MatrixXd delta_lambda = gaudin_matrix.fullPivLu().solve(-rhs_bethe_equations);
 
+        // Calculate the average difference squared of the rapidity changes.
+        double diff_square = 0;
+        for (int i = 0; i < N; i++) {
+            diff_square += delta_lambda(i) * delta_lambda(i) / lambdas[i] * lambdas[i];
+        }
+        diff_square /= N;
+
+        std::cout << diff_square << std::endl;
+
         for (int p = 0; p < N; p++) {
             lambdas[p] += delta_lambda(p);
+        }
+
+        if (diff_square < 10e4 * MACHINE_EPS_SQUARE) {
+            break;
         }
     }
 }
