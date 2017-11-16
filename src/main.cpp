@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+    
 
 int main() {
     // for (int n = 0; n < 1; n++) {
@@ -22,3 +23,4 @@ int main() {
     }
     std::cout << std::endl;
 }
+

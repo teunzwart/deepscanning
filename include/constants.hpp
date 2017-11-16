@@ -10,7 +10,7 @@
 
 const double PI = 3.141592653589793238462643;
 
-const double MACHINE_EPS = std::numeric_limits<double>::epsilon();
-const double MACHINE_EPS_SQUARE = std::pow(MACHINE_EPS, 2.0);
+constexpr double MACHINE_EPS = std::numeric_limits<double>::epsilon();
+constexpr double MACHINE_EPS_SQUARE = MACHINE_EPS * MACHINE_EPS;
 
 #endif // CONSTANTS_H
