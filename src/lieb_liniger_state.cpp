@@ -76,9 +76,7 @@ void lieb_liniger_state::find_rapidities(bool use_machine_learning) {
  * for the Lieb-Liniger model found in the ABACUS library by J-S Caux. 
  */
 void lieb_liniger_state::calculate_rapidities_newton() {
-    int no_of_iterations = 0;
-    while (no_of_iterations < 20) {
-        no_of_iterations += 1;
+    for (int no_of_iterations = 0; no_of_iterations < 20; no_of_iterations++) {
         // Calculate the Yang-Yang equation values.
         Eigen::VectorXd rhs_bethe_equations = Eigen::VectorXd(N).setZero();
         for (int j = 0; j < N; j++) {
@@ -90,7 +88,7 @@ void lieb_liniger_state::calculate_rapidities_newton() {
 
         // Perform a step of the Newton method.
         calculate_gaudin_matrix();
-        // TODO: Use partial LU decomp since gaudin_matrix is nonsingular, this allows openmp usage.
+        // Partial LU decomposition may be used sinde the Gaudin matrix is non-singular.
         Eigen::VectorXd delta_lambda = gaudin_matrix.lu().solve(-rhs_bethe_equations);
 
         // Calculate the average difference squared of the rapidity changes.
@@ -100,8 +98,7 @@ void lieb_liniger_state::calculate_rapidities_newton() {
         }
         diff_square /= N;
 
-        // std::cout << diff_square << std::endl;
-
+        // Update rapidities.
         for (int p = 0; p < N; p++) {
             lambdas(p) += delta_lambda(p);
         }
