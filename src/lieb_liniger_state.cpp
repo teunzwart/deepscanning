@@ -18,12 +18,12 @@ lieb_liniger_state::lieb_liniger_state(double new_c, double new_L,
     : c(new_c),
       L(new_L),
       N(new_N),
-      Is(new_N, 1),
-      lambdas(new_N, 1),
+      Is(new_N),
+      lambdas(new_N),
       gaudin_matrix(new_N, new_N)
 {
-    std::cout << Is << std::endl;
     generate_gs_bethe_numbers();
+
 }
 
 /**
@@ -31,24 +31,25 @@ lieb_liniger_state::lieb_liniger_state(double new_c, double new_L,
  */
 lieb_liniger_state::lieb_liniger_state(double new_c, double new_L,
                                        int new_N,
-                                       Eigen::MatrixXd new_Is)
+                                       Eigen::VectorXd new_Is)
     : c(new_c),
       L(new_L),
       N(new_N),
       Is(new_Is),
-      lambdas(new_N, 1),
+      lambdas(new_N),
       gaudin_matrix(new_N, new_N)
 {
-    std::cout << Is << std::endl;
 }
 
 /**
  * Generate the Bethe numbers of the N particle Lieb-Liniger ground state.
  */
 void lieb_liniger_state::generate_gs_bethe_numbers() {
-    Is -= Eigen::MatrixXd::Constant(N, 1, N/2);
     if (N % 2 == 0) {
-        Is += Eigen::MatrixXd::Constant(N, 1, 0.5);
+        Is = Eigen::VectorXd::LinSpaced(N, 1, N) - Eigen::VectorXd::Constant(N,  N/2);
+        Is -= Eigen::VectorXd::Constant(N, 0.5);
+    } else {
+        Is = Eigen::VectorXd::LinSpaced(N, -(N-1)/2, (N-1)/2);
     }
 }
 
@@ -56,10 +57,12 @@ void lieb_liniger_state::find_rapidities(bool use_machine_learning) {
     if (!use_machine_learning) {
         // Initial bad guess for the rapidities.
         lambdas = 2 * PI / L * Is;
+        calculate_rapidities_newton();
     } else {
         lambdas = guess_rapidities(Is);
+        calculate_rapidities_newton();
+        update_neural_net(Is, lambdas);
     }
-    calculate_rapidities_newton();
 }
 
 /**
@@ -77,7 +80,7 @@ void lieb_liniger_state::calculate_rapidities_newton() {
     while (no_of_iterations < 20) {
         no_of_iterations += 1;
         // Calculate the Yang-Yang equation values.
-        Eigen::MatrixXd rhs_bethe_equations = Eigen::MatrixXd(N, 1).setZero();
+        Eigen::VectorXd rhs_bethe_equations = Eigen::VectorXd(N).setZero();
         for (int j = 0; j < N; j++) {
             for (int k = 0; k < N; k++) {
                 rhs_bethe_equations(j) += 2 * atan((lambdas(j) - lambdas(k) / c));
@@ -88,7 +91,7 @@ void lieb_liniger_state::calculate_rapidities_newton() {
         // Perform a step of the Newton method.
         calculate_gaudin_matrix();
         // TODO: Use partial LU decomp since gaudin_matrix is nonsingular, this allows openmp usage.
-        Eigen::MatrixXd delta_lambda = gaudin_matrix.lu().solve(-rhs_bethe_equations);
+        Eigen::VectorXd delta_lambda = gaudin_matrix.lu().solve(-rhs_bethe_equations);
 
         // Calculate the average difference squared of the rapidity changes.
         double diff_square = 0;
@@ -140,8 +143,8 @@ double lieb_liniger_state::kernel(double k, double c) {
  * Generate a vector of Bethe numbers distributed according to a
  * Gaussian distribution, with only unique entries.
  */
-Eigen::MatrixXd generate_bethe_numbers(int N) {
-    Eigen::MatrixXd bethe_numbers = Eigen::MatrixXd::Constant(N, 1, -10e7);
+Eigen::VectorXd generate_bethe_numbers(int N) {
+    Eigen::VectorXd bethe_numbers = Eigen::VectorXd::Constant(N, -10e7);
     double mean = 0;
     double standard_dev = N * PI; // We assume that excitations still cluster around the ground state.
 
