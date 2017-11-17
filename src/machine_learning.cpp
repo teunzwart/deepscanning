@@ -1,10 +1,10 @@
 #include "machine_learning.hpp"
 
-#include <vector>
+#include <Eigen/Dense>
 
 /**
  * Make a first guess for the rapidities based on machine learning.
  */
-std::vector<double> guess_rapidities(std::vector<double> bethe_numbers) {
+Eigen::MatrixXd guess_rapidities(Eigen::MatrixXd bethe_numbers) {
     return bethe_numbers;
 }

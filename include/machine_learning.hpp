@@ -1,10 +1,10 @@
 #ifndef MACHINE_LEARNING_H
 #define MACHINE_LEARNING_H
 
-#include <vector>
+#include <Eigen/Dense>
 
 
-std::vector<double> guess_rapidities(std::vector<double> bethe_numbers);
+Eigen::MatrixXd guess_rapidities(Eigen::MatrixXd bethe_numbers);
 
 
 #endif // MACHINE_LEARNING_H

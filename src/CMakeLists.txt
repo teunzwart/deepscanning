@@ -2,6 +2,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 link_directories(${CMAKE_BINARY_DIR})
 
 add_library(machine_learning machine_learning.cpp)
+target_link_libraries(machine_learning Eigen3::Eigen)
 
 add_library(lieb_liniger_state lieb_liniger_state.cpp)
 target_link_libraries(lieb_liniger_state machine_learning Eigen3::Eigen)

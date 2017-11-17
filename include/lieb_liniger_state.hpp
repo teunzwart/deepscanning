@@ -3,8 +3,6 @@
 
 #include <Eigen/Dense>
 
-#include <vector>
-
 /**
  * Represent a Lieb-Liniger Bethe state.
  */
@@ -14,14 +12,14 @@ public:
     double c; ///< Interaction strength.
     double L; ///< System size.
     int N; ///< Number of particles
-    std::vector<double> Is; ///< Bethe numbers
-    std::vector<double> lambdas; ///< Rapidities
+    Eigen::MatrixXd Is; ///< Bethe numbers
+    Eigen::MatrixXd lambdas; ///< Rapidities
     Eigen::MatrixXd gaudin_matrix; ///< The Gaudin matrix of the state.
     
     
     lieb_liniger_state(double new_c, double new_L, int new_N);
     lieb_liniger_state(double new_c, double new_L, int new_N,
-                       std::vector<double> new_Is);
+                       Eigen::MatrixXd new_Is);
 
     void calculate_rapidities_newton();
     void calculate_gaudin_matrix();
@@ -33,7 +31,7 @@ private:
     void generate_gs_bethe_numbers();
 };
 
-std::vector<double> generate_bethe_numbers(int N);
+Eigen::MatrixXd generate_bethe_numbers(int N);
 
 
 #endif // LIEB_LINIGER_STATE_H
