@@ -9,26 +9,16 @@
     
 
 int main() {
-
-    clock_t time_a = clock();
-    for (int n = 0; n < 10; n++) {
-        Eigen::MatrixXd bethe_numbers = generate_bethe_numbers(100);
-        lieb_liniger_state ll_state(1, 100, 100, bethe_numbers);
-        ll_state.find_rapidities();
-        // for (auto rap: ll_state.lambdas) {
-            // std::cout << std::setw(8) << std::setprecision(4) << rap << " ";
-        // }
-        // std::cout << std::endl;
+    for (int n = 0; n < 1; n++) {
+        Eigen::VectorXd bethe_numbers = generate_bethe_numbers(10);
+        std::cout << bethe_numbers << std::endl;
+        lieb_liniger_state llstate(1, 100, 10, bethe_numbers);
+        llstate.find_rapidities();
+        std::cout << llstate.lambdas << std::endl;
     }
-
-    clock_t time_b = clock();
-
-    std::cout << "time: " << (time_b - time_a) / (double)CLOCKS_PER_SEC << std::endl;
-    // lieb_liniger_state ll_state(1, 100, 100);
-    // ll_state.find_rapidities(true);
-    // for (auto rap: ll_state.lambdas) {
-    //     std::cout << std::setw(6) << std::setprecision(5) << rap << " ";
-    // }
-    // std::cout << std::endl;
+    
+    lieb_liniger_state llstate2(1, 100, 9);
+    llstate2.find_rapidities(true);
+    std::cout << llstate2.lambdas << std::endl;
 }
 
