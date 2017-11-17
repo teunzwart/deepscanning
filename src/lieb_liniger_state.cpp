@@ -141,9 +141,9 @@ double lieb_liniger_state::kernel(double k, double c) {
  * Gaussian distribution, with only unique entries.
  */
 Eigen::VectorXd generate_bethe_numbers(int N) {
-    Eigen::VectorXd bethe_numbers = Eigen::VectorXd::Constant(N, -10e7);
+    Eigen::VectorXd bethe_numbers = Eigen::VectorXd::Constant(N, 10e7);
     double mean = 0;
-    double standard_dev = N * PI; // We assume that excitations still cluster around the ground state.
+    double standard_dev = N; // We assume that excitations still cluster around the ground state.
 
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -151,20 +151,24 @@ Eigen::VectorXd generate_bethe_numbers(int N) {
     std::normal_distribution<> normal_distribution(mean, standard_dev);
     std::uniform_real_distribution<> sign_distribution(-1, 1);
 
-    // TODO: Make sure all entries are unique.
-    for (int n = 0; n < N; n++) {
+    int no_of_unique_entries = 0;
+    while (no_of_unique_entries < N) {
+        std::cout << bethe_numbers << std::endl;
         double random_number = std::round(normal_distribution(gen));
         // std::cout << "rand num " << random_number << std::endl;
 
         // For N even Bethe numbers are half odd.
         if (N % 2 == 0) {
-            bethe_numbers(n) = random_number + std::copysign(1, sign_distribution(gen)) * 0.5;            
-        } else {
-            bethe_numbers(n) = random_number;
+            random_number += std::copysign(1, sign_distribution(gen)) * 0.5;
         }
+        if ((abs(bethe_numbers.array() - random_number) < 10e-4).any()) {
+            continue;
+        } else {
+            bethe_numbers(no_of_unique_entries) = random_number;
+            no_of_unique_entries += 1;
+        }
+        
     }
 
-    std::sort(bethe_numbers.data(), bethe_numbers.data() + bethe_numbers.size());
-    
-    return bethe_numbers;
+    return std::sort(bethe_numbers.data(), bethe_numbers.data() + bethe_numbers.size());
 }
