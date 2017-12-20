@@ -6,6 +6,7 @@ class lieb_liniger_state:
         self.c = c
         self.L = L
         self.N = N
+        self.energy = 0
         if bethe_numbers is not None:
             self.Is = bethe_numbers
         else:
@@ -64,8 +65,20 @@ class lieb_liniger_state:
 
         return no_of_iterations
 
+    def calculate_rapidities(self):
+        self.lambdas = 2 * np.pi / self.L * np.array(self.Is)
+        self.calculate_rapidities_newton()
 
-def generate_gs_bethe_numbers(N):
+    def calculate_energy(self):
+        self.energy = np.sum(self.lambdas**2)
+
+    def calculate_all(self):
+        self.calculate_rapidities()
+        self.calculate_energy()
+
+
+def generate_bethe_numbers(N):
+    """Generate Bethe numbers for excited states."""
     bethe_numbers = np.full(N, 10.**7, dtype=np.float)
     no_of_unique_entries = 0
     while no_of_unique_entries < N:
@@ -82,9 +95,28 @@ def generate_gs_bethe_numbers(N):
     return np.sort(bethe_numbers)
 
 
+def mutate_bethe_numbers(bethe_numbers):
+    """Mutate a given state of Bethe numbers to have an excited particle."""
+    while True:
+        rand_index = np.random.randint(len(bethe_numbers))
+        new_bethe_numbers = list(bethe_numbers[:rand_index]) + list(bethe_numbers[rand_index+1:])
+        new_bethe_numbers += [bethe_numbers[rand_index] + np.sign(np.random.uniform(-1, 1))]
+        if len(np.unique(new_bethe_numbers)) == len(bethe_numbers):
+            return sorted(new_bethe_numbers)
+
+
 if __name__ == "__main__":
-    llstate = lieb_liniger_state(1, 100, 5)
-    llstate.lambdas = 2 * np.pi / llstate.L * llstate.Is
-    llstate.calculate_rapidities_newton()
-    print(llstate.lambdas)
-    print(generate_gs_bethe_numbers(6))
+    bethe_numbers = generate_bethe_numbers(100)
+    stateb = lieb_liniger_state(1, 100, 100, bethe_numbers)
+    statea = lieb_liniger_state(1, 100, 100)
+    statea.calculate_all()
+    stateb.calculate_all()
+    print(stateb.energy - statea.energy)
+    print(1/(1 + stateb.energy - statea.energy))
+    # with open("lieblinigerc1L100N10random.txt", "a+") as file:
+    #     for _ in range(10000):
+    #         bethe_numbers = generate_bethe_numbers(2)
+    #         llstate = lieb_liniger_state(1, 100, 2, bethe_numbers)
+    #         llstate.calculate_rapidities()
+    #         llstate.calculate_energy()
+    #         file.write(str(repr(list(llstate.Is))) + "\n" + str(llstate.energy) + "\n")
