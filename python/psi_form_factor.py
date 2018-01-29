@@ -9,38 +9,37 @@ import copy
 import lieb_liniger_state as lls
 kernel = lls.lieb_liniger_state.kernel
 
-p = 10
 
 def psi_form_factor(mu, lambda_):
     momentum_sum = np.sum(mu.lambdas - lambda_.lambdas)
-    print("Kout", momentum_sum)
+    # print("Kout", momentum_sum)
     denominator = 1 / (V_plus(mu, lambda_, lambda_.lambdas[0]) - V_minus(mu, lambda_, lambda_.lambdas[0]))
-    print("denom", 1/(V_plus(mu, lambda_, lambda_.lambdas[0]) - V_minus(mu, lambda_, lambda_.lambdas[0])))
+    # print("denom", 1/(V_plus(mu, lambda_, lambda_.lambdas[0]) - V_minus(mu, lambda_, lambda_.lambdas[0])))
     detpart = np.linalg.det(np.identity(mu.N) + construct_U(mu, lambda_))
     # print("det(1 + U)", np.linalg.det(np.identity(mu.N) + construct_U(mu, lambda_)))
     # print("log(det(1 + U))", np.log(np.linalg.det(np.identity(mu.N) + construct_U(mu, lambda_))))
 
-    print("Vplus[0]", V_plus(mu, lambda_, lambda_.lambdas[0]))
-    print("det_frac", detpart * denominator)
+    # print("Vplus[0]", V_plus(mu, lambda_, lambda_.lambdas[0]))
+    # print("det_frac", detpart * denominator)
 
     prod1 = 1
     for j in range(mu.N):
         prod1 *= (V_plus(mu, lambda_, lambda_.lambdas[j]) - V_minus(mu, lambda_, lambda_.lambdas[j]))
-    print("prod1", prod1)
+    # print("prod1", prod1)
     prod2 = 1
     for j in range(mu.N):
         for k in range(mu.N):
             prod2 *= (lambda_.lambdas[j] - lambda_.lambdas[k] + 1j * mu.c) / (mu.lambdas[j] - lambda_.lambdas[k])
-    print("prod2", prod2)
+    # print("prod2", prod2)
     ff = momentum_sum * prod1 * prod2 * detpart * denominator
-    return ff
+    return ff * 1j
 
 
 def V_plus(mu, lambda_, lambda_j):
     product = 1 + 0 * 1j
     for m in range(mu.N):
         product *= (mu.lambdas[m] - lambda_j + 1j * mu.c) / (lambda_.lambdas[m] - lambda_j + 1j * mu.c)
-    return product 
+    return product
 
 
 def V_minus(mu, lambda_, lambda_j):
@@ -56,7 +55,7 @@ def construct_U(mu, lambda_):
             if m != j:
                 product *= (mu.lambdas[m] - lambda_.lambdas[j]) / (lambda_.lambdas[m] - lambda_.lambdas[j])
         products.append(product)
-        
+
         for k in range(mu.N):
             # print("part1", j, k, 1j * (mu.lambdas[j] - lambda_.lambdas[j]) / (V_plus(mu, lambda_, lambda_.lambdas[j]) - V_minus(mu, lambda_, lambda_.lambdas[j])))
             U[j, k] = 1j * (mu.lambdas[j] - lambda_.lambdas[j]) / (V_plus(mu, lambda_, lambda_.lambdas[j]) - V_minus(mu, lambda_, lambda_.lambdas[j]))
@@ -65,7 +64,7 @@ def construct_U(mu, lambda_):
             U[j, k] *= products[j]
             U[j, k] *= kernel_part
             # print(U[j, k])
-    print("prods", products)
+    # print("prods", products)
 
     return U
 
@@ -73,58 +72,34 @@ def construct_U(mu, lambda_):
 def calculate_normalized_form_factor(mu, lambda_):
     unnormalized_ff = psi_form_factor(mu, lambda_)
     return unnormalized_ff / np.sqrt(mu.norm * lambda_.norm)
-    
+
+
 if __name__ == "__main__":
     rstate = lls.lieb_liniger_state(1, 10, 3)
     bethe_numbers = copy.copy(rstate.Is)
-    bethe_numbers[0] -= 1
+    bethe_numbers[0] -= 100
     lstate = lls.lieb_liniger_state(1, 10, 3, bethe_numbers)
     rstate.calculate_all()
     lstate.calculate_all()
-    print(lstate.lambdas)
+    print(lstate.norm)
+    print(rstate.norm)
 
-    
-    print("norm of rstate", rstate.norm)
-    print("norm of lstate", lstate.norm)
-    # print(mu_state.Is, 2 * np.pi / 10 * np.sum(mu_state.Is))
-    # print(lambda_state.Is, 2 * np.pi / 10 * np.sum(lambda_state.Is))
-    # print(mu_state.lambdas, np.sum(mu_state.lambdas))
-    # print(lambda_state.lambdas, np.sum(lambda_state.lambdas))
-
-    # print(np.identity(rstate.N) + construct_U(lstate, rstate))
-    # print("det", np.linalg.det(np.identity(rstate.N) + construct_U(lstate, rstate)))
-    
     print("<l|rho|r>", psi_form_factor(lstate, rstate))
-    # print(calculate_normalized_form_factor(lstate, rstate))
-    # print("<r|rho|l>", psi_form_factor(rstate, lstate))
+    print(calculate_normalized_form_factor(lstate, rstate))
+    print("<r|rho|l>", psi_form_factor(rstate, lstate))
+    print(calculate_normalized_form_factor(rstate, lstate))
 
-    # print("\n")
+    print("\n")
 
-    
     # Random states
-    # mu_state = lls.lieb_liniger_state(1, 10, 10, lls.generate_bethe_numbers(10))
-    # lambda_state = lls.lieb_liniger_state(1, 10, 10, lls.generate_bethe_numbers(10))
-    # mu_state.calculate_all()
-    # lambda_state.calculate_all()
-    # print("norm of mu", mu_state.norm)
-    # print("norm of lambda", lambda_state.norm)
-    # print(mu_state.Is, 2 * np.pi / 10 * np.sum(mu_state.Is))
-    # print(lambda_state.Is, 2 * np.pi / 10 * np.sum(lambda_state.Is))
-    # print(mu_state.lambdas, np.sum(mu_state.lambdas))
-    # print(lambda_state.lambdas, np.sum(lambda_state.lambdas))
+    lstate = lls.lieb_liniger_state(1, 10, 10)
+    rstate = lls.lieb_liniger_state(1, 10, 10, lls.generate_bethe_numbers(10))
+    print(rstate.Is)
+    lstate.calculate_all()
+    rstate.calculate_all()
 
-    # print("<mu|rho|lambda>", psi_form_factor(mu_state, lambda_state))
-    # print("<lambda|rho|mu>", psi_form_factor(lambda_state, mu_state))
-
-    # mu_state = lls.lieb_liniger_state(1, 10, 10, [-13.5, -12.5, -5.5, -2.5,  -1.5,  -0.5, 0.5, 6.5, 7.5, 18.5])
-    # lambda_state = lls.lieb_liniger_state(1, 10, 10, [-13.5, -10.5, -5.5, -2.5, 4.5, 6.5, 11.5, 15.5, 16.5, 18.5])
-    # print(mu_state.Is)
-    # print(lambda_state.Is)
-    # mu_state.calculate_all()
-    # lambda_state.calculate_all()
-    # print(mu_state.lambdas)
-    # print(lambda_state.lambdas)
-    # print(psi_form_factor(mu_state, lambda_state))
-    # print("ff", np.abs(calculate_normalized_form_factor(mu_state, lambda_state)))
-
-    # print(construct_U(mu_state, lambda_state))
+    print("<l|rho|r>", psi_form_factor(lstate, rstate))
+    print(np.log(calculate_normalized_form_factor(lstate, rstate)))
+    print("<r|rho|l>", psi_form_factor(rstate, lstate))
+    print(calculate_normalized_form_factor(rstate, lstate))
+    print(np.log(calculate_normalized_form_factor(rstate, lstate)))
