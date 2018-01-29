@@ -7,12 +7,14 @@ class lieb_liniger_state:
         self.L = L
         self.N = N
         self.energy = 0
+        self.momentum = 0
+        self.norm = np.inf
         if bethe_numbers is not None:
             self.Is = bethe_numbers
         else:
             self.Is = self.generate_gs_bethe_numbers()
         self.lambdas = np.zeros(N)
-        self.gaudin_matrix = np.matrix([[0.0 for _ in range(self.N)] for _ in range(self.N)])
+        self.gaudin_matrix = np.zeros((self.N, self.N))
 
     def generate_gs_bethe_numbers(self):
         """Generate ground state Bethe numbers for the Lieb-Linger model."""
@@ -21,18 +23,19 @@ class lieb_liniger_state:
         else:
             return np.linspace(-(self.N-1)/2, (self.N-1)/2, self.N)
 
-    def kernel(self, k, c):
+    @staticmethod
+    def kernel(k, c):
         return 2 * c / (c**2 + k**2)
 
     def calculate_gaudin_matrix(self):
-        """Calculate the Gaudin matrix."""
+        # """Calculate the Gaudin matrix."""
         for j in range(self.N):
             for k in range(self.N):
                 if j == k:
                     kernel_sum = self.L
                     for kp in range(self.N):
-                        kernel_sum += self.kernel(0, self.c)
-                    self.gaudin_matrix[j, k] = kernel_sum
+                        kernel_sum += self.kernel(self.lambdas[j] - self.lambdas[kp], self.c)
+                    self.gaudin_matrix[j, k] = kernel_sum - self.kernel(0, self.c)
                 else:
                     self.gaudin_matrix[j, k] = -self.kernel(self.lambdas[j] - self.lambdas[k], self.c)
 
@@ -60,8 +63,6 @@ class lieb_liniger_state:
 
             if diff_square < 10**-14:
                 return no_of_iterations
-            # if printing:
-            #     print(self.lambdas)
 
         return no_of_iterations
 
@@ -72,9 +73,21 @@ class lieb_liniger_state:
     def calculate_energy(self):
         self.energy = np.sum(self.lambdas**2)
 
+    def calculate_momentum(self):
+        self.momentum = np.sum(self.lambdas)
+
+    def calculate_norm(self):
+        print("det", np.linalg.det(self.gaudin_matrix))
+        self.norm = self.c**self.N * np.linalg.det(self.gaudin_matrix)
+        for k in range(self.N):
+            for j in range(k+1, self.N):
+                self.norm *= ((self.lambdas[j] - self.lambdas[k])**2 + self.c**2) / (self.lambdas[j] - self.lambdas[k])**2
+
     def calculate_all(self):
         self.calculate_rapidities()
         self.calculate_energy()
+        self.calculate_momentum()
+        self.calculate_norm()
 
 
 def generate_bethe_numbers(N):
@@ -106,17 +119,9 @@ def mutate_bethe_numbers(bethe_numbers):
 
 
 if __name__ == "__main__":
-    bethe_numbers = generate_bethe_numbers(100)
-    stateb = lieb_liniger_state(1, 100, 100, bethe_numbers)
-    statea = lieb_liniger_state(1, 100, 100)
-    statea.calculate_all()
-    stateb.calculate_all()
-    print(stateb.energy - statea.energy)
-    print(1/(1 + stateb.energy - statea.energy))
-    # with open("lieblinigerc1L100N10random.txt", "a+") as file:
-    #     for _ in range(10000):
-    #         bethe_numbers = generate_bethe_numbers(2)
-    #         llstate = lieb_liniger_state(1, 100, 2, bethe_numbers)
-    #         llstate.calculate_rapidities()
-    #         llstate.calculate_energy()
-    #         file.write(str(repr(list(llstate.Is))) + "\n" + str(llstate.energy) + "\n")
+    with open("lieblinigerc1L100N10random.txt", "a+") as file:
+        for i in range(10000):
+            bethe_numbers = generate_bethe_numbers(10)
+            llstate = lieb_liniger_state(1, 100, 10, bethe_numbers)
+            llstate.calculate_all()
+            file.write(str(repr(list(llstate.Is))) + "\n" + str(llstate.energy) + "\n")
