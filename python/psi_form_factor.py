@@ -15,22 +15,21 @@ def psi_form_factor(mu, lambda_):
     ff = np.sum(mu.lambdas - lambda_.lambdas)
     ff /= (V_plus(mu, lambda_, p) - V_minus(mu, lambda_, p))
     ff *= np.linalg.det(np.identity(mu.N) + construct_U(mu, lambda_))
-    print("det(1 + U)", np.linalg.det(np.identity(mu.N) + construct_U(mu, lambda_)))
-    print("log(det(1 + U))", np.log(np.linalg.det(np.identity(mu.N) + construct_U(mu, lambda_))))
+    # print("det(1 + U)", np.linalg.det(np.identity(mu.N) + construct_U(mu, lambda_)))
+    # print("log(det(1 + U))", np.log(np.linalg.det(np.identity(mu.N) + construct_U(mu, lambda_))))
 
     for j in range(mu.N):
         ff *= (V_plus(mu, lambda_, lambda_.lambdas[j]) - V_minus(mu, lambda_, lambda_.lambdas[j]))
     for j in range(mu.N):
         for k in range(mu.N):
             ff *= (lambda_.lambdas[j] - lambda_.lambdas[k] + 1j * mu.c) / (mu.lambdas[j] - lambda_.lambdas[k])
-    return ff 
+    return ff
 
 
 def V_plus(mu, lambda_, lambda_j):
     product = 1 + 0 * 1j
     for m in range(mu.N):
         product *= (mu.lambdas[m] - lambda_j + 1j * mu.c) / (lambda_.lambdas[m] - lambda_j + 1j * mu.c)
-        # print(product)
     return product
 
 
@@ -40,16 +39,23 @@ def V_minus(mu, lambda_, lambda_j):
 
 def construct_U(mu, lambda_):
     U = np.zeros((mu.N, mu.N), dtype=np.complex_)
+    products = []
     for j in range(mu.N):
+        product = 1
         for m in range(mu.N):
-            product = 1
             if m != j:
                 product *= (mu.lambdas[m] - lambda_.lambdas[j]) / (lambda_.lambdas[m] - lambda_.lambdas[j])
+        products.append(product)
+        
         for k in range(mu.N):
-            # print("part1", 1j * (mu.lambdas[j] - lambda_.lambdas[j]) / (V_plus(mu, lambda_, lambda_.lambdas[j]) - V_minus(mu, lambda_, lambda_.lambdas[j])))
+            # print("part1", j, k, 1j * (mu.lambdas[j] - lambda_.lambdas[j]) / (V_plus(mu, lambda_, lambda_.lambdas[j]) - V_minus(mu, lambda_, lambda_.lambdas[j])))
             U[j, k] = 1j * (mu.lambdas[j] - lambda_.lambdas[j]) / (V_plus(mu, lambda_, lambda_.lambdas[j]) - V_minus(mu, lambda_, lambda_.lambdas[j]))
             kernel_part = (kernel(lambda_.lambdas[j] - lambda_.lambdas[k], mu.c) - kernel(lambda_.lambdas[0] - lambda_.lambdas[k], mu.c))
-            U[j, k] *= kernel_part * product
+            # print("kernel", j, k, kernel_part)
+            U[j, k] *= products[j]
+            U[j, k] *= kernel_part
+            # print(U[j, k])
+    print("prods", products)
 
     return U
 
@@ -65,7 +71,6 @@ if __name__ == "__main__":
     lstate = lls.lieb_liniger_state(1, 10, 3, bethe_numbers)
     rstate.calculate_all()
     lstate.calculate_all()
-    print("VPLUS", V_plus(lstate, rstate, rstate.lambdas[0]))
     print(lstate.lambdas)
 
     
@@ -77,9 +82,10 @@ if __name__ == "__main__":
     # print(lambda_state.lambdas, np.sum(lambda_state.lambdas))
 
     print(np.identity(rstate.N) + construct_U(lstate, rstate))
+    print("det", np.linalg.det(np.identity(rstate.N) + construct_U(lstate, rstate)))
     
-    # print("<l|rho|r>", psi_form_factor(lstate, rstate))
-    # print("<r|rho|l>", psi_form_factor(rstate, lstate))
+    print("<l|rho|r>", psi_form_factor(lstate, rstate))
+    print("<r|rho|l>", psi_form_factor(rstate, lstate))
 
     # print("\n")
 
