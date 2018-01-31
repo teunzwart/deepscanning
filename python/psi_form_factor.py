@@ -3,14 +3,21 @@ Calculate the \rho(x=0) matrix element for the Lieb-Liniger model,
 as presented by Piroli and Calabrese.
 """
 
+import pickle
+
 import numpy as np
-import copy
 
 import lieb_liniger_state as lls
 kernel = lls.lieb_liniger_state.kernel
 
+np.seterr(all='raise')
+
 
 def psi_form_factor(mu, lambda_):
+    if list(mu.Is) == list(lambda_.Is):
+        return mu.N / mu. L
+    elif mu.momentum == lambda_.momentum:
+        return 0
     momentum_sum = np.sum(mu.lambdas - lambda_.lambdas)
     # print("Kout", momentum_sum)
     denominator = 1 / (V_plus(mu, lambda_, lambda_.lambdas[0]) - V_minus(mu, lambda_, lambda_.lambdas[0]))
@@ -75,31 +82,50 @@ def calculate_normalized_form_factor(mu, lambda_):
 
 
 if __name__ == "__main__":
-    rstate = lls.lieb_liniger_state(1, 10, 3)
-    bethe_numbers = copy.copy(rstate.Is)
-    bethe_numbers[0] -= 100
-    lstate = lls.lieb_liniger_state(1, 10, 3, bethe_numbers)
+    N = 10
+    data = []
+    rstate = lls.lieb_liniger_state(1, N, N)
     rstate.calculate_all()
-    lstate.calculate_all()
-    print(lstate.norm)
-    print(rstate.norm)
+    for k in range(10000):
+        bethe_numbers = lls.generate_bethe_numbers(N, list(rstate.Is))
+        lstate = lls.lieb_liniger_state(1, N, N, bethe_numbers)
+        lstate.calculate_all()
+        ff = calculate_normalized_form_factor(lstate, rstate)
+        try:
+            data.append({"I": lstate.Is, "ff": np.abs(np.log(np.real(ff**2)))})
+        except FloatingPointError:
+            print(np.real(ff**2))
 
-    print("<l|rho|r>", psi_form_factor(lstate, rstate))
-    print(calculate_normalized_form_factor(lstate, rstate))
-    print("<r|rho|l>", psi_form_factor(rstate, lstate))
-    print(calculate_normalized_form_factor(rstate, lstate))
+    pickle.dump(data, open("data.p", "wb+"))
+        
 
-    print("\n")
 
-    # Random states
-    lstate = lls.lieb_liniger_state(1, 10, 10)
-    rstate = lls.lieb_liniger_state(1, 10, 10, lls.generate_bethe_numbers(10))
-    print(rstate.Is)
-    lstate.calculate_all()
-    rstate.calculate_all()
 
-    print("<l|rho|r>", psi_form_factor(lstate, rstate))
-    print(np.log(calculate_normalized_form_factor(lstate, rstate)))
-    print("<r|rho|l>", psi_form_factor(rstate, lstate))
-    print(calculate_normalized_form_factor(rstate, lstate))
-    print(np.log(calculate_normalized_form_factor(rstate, lstate)))
+
+    
+    # rstate = lls.lieb_liniger_state(1, 10, 3)
+    # lstate = lls.lieb_liniger_state(1, 10, 3, [-6, 0, 6])
+    # rstate.calculate_all()
+    # lstate.calculate_all()
+    # print(lstate.norm)
+    # print(rstate.norm)
+
+    # print("<l|rho|r>", psi_form_factor(lstate, rstate))
+    # print(calculate_normalized_form_factor(lstate, rstate))
+    # print("<r|rho|l>", psi_form_factor(rstate, lstate))
+    # print(calculate_normalized_form_factor(rstate, lstate))
+
+    # print("\n")
+
+    # # Random states
+    # lstate = lls.lieb_liniger_state(1, 10, 10)
+    # rstate = lls.lieb_liniger_state(1, 10, 10, lls.generate_bethe_numbers(10))
+    # print(rstate.Is)
+    # lstate.calculate_all()
+    # rstate.calculate_all()
+
+    # print("<l|rho|r>", psi_form_factor(lstate, rstate))
+    # print(np.log(calculate_normalized_form_factor(lstate, rstate)))
+    # print("<r|rho|l>", psi_form_factor(rstate, lstate))
+    # print(calculate_normalized_form_factor(rstate, lstate))
+    # print(np.log(calculate_normalized_form_factor(rstate, lstate)))
