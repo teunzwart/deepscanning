@@ -8,7 +8,9 @@ class lieb_liniger_state:
         self.N = N
         self.energy = 0
         self.momentum = 0
+        self.integer_momentum = 0
         self.norm = np.inf
+        self.ff = 0
         if bethe_numbers is not None:
             self.Is = bethe_numbers
         else:
@@ -76,8 +78,10 @@ class lieb_liniger_state:
     def calculate_momentum(self):
         self.momentum = np.sum(self.lambdas)
 
+    def calculate_integer_momentum(self):
+        self.integer_momentum = np.sum(self.Is)
+
     def calculate_norm(self):
-        print("det", np.linalg.det(self.gaudin_matrix))
         self.norm = self.c**self.N * np.linalg.det(self.gaudin_matrix)
         for k in range(self.N):
             for j in range(k+1, self.N):
@@ -87,10 +91,11 @@ class lieb_liniger_state:
         self.calculate_rapidities()
         self.calculate_energy()
         self.calculate_momentum()
+        self.calculate_integer_momentum()
         self.calculate_norm()
 
 
-def generate_bethe_numbers(N):
+def generate_bethe_numbers(N, ref_state):
     """Generate Bethe numbers for excited states."""
     bethe_numbers = np.full(N, 10.**7, dtype=np.float)
     no_of_unique_entries = 0
@@ -105,7 +110,10 @@ def generate_bethe_numbers(N):
             bethe_numbers[no_of_unique_entries] = random_number
             no_of_unique_entries += 1
 
-    return np.sort(bethe_numbers)
+    if list(np.sort(bethe_numbers)) == ref_state:
+        return generate_bethe_numbers(N, ref_state)
+    else:
+        return np.sort(bethe_numbers)
 
 
 def mutate_bethe_numbers(bethe_numbers):
