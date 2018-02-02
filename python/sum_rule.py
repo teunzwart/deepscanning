@@ -5,17 +5,30 @@ import numpy as np
 
 
 def right_side(k, N, L):
-    return 4 * np.pi**2 * N / L**4 * k**2 
+    return 4 * np.pi**2 * N / L**4 * k**2
+
 
 def left_side(list_of_states, ref_energy):
     sumrule_sum = 0
     for state in list_of_states:
-        print("energy diff", (state.energy - ref_energy))
-        print(state.ff**2)
+        # print("energy diff", (state.energy - ref_energy))
+        # print(state.ff**2)
         sumrule_sum += (state.energy - ref_energy) * np.real(state.ff**2)
 
     return sumrule_sum
 
+
+def compute_average_sumrule(data, ref_energy, N, L):
+    """
+    Compute the average sumrule over all momentum slices.
+    
+    data: dictionary with momenta as keys and states as values
+    ref_energy: energy of the reference state
+    """
+    sumrule = 0
+    for momentum, states in data.items():
+        sumrule += left_side(states, ref_energy) / right_side(momentum, N, L)
+    return sumrule / len(data)
 
 
 if __name__ == "__main__":
@@ -26,7 +39,7 @@ if __name__ == "__main__":
     rstate.calculate_all()
     bethe_numbers = copy.copy(rstate.Is)
     orig_bethe = copy.copy(rstate.Is)
-    for k in range(100):
+    for k in range(1000):
         # bethe_numbers = lls.generate_bethe_numbers(N, list(rstate.Is))
         bethe_numbers[-1] += 1
         lstate = lls.lieb_liniger_state(1, N, N, bethe_numbers)
@@ -38,7 +51,8 @@ if __name__ == "__main__":
         else:
             data[integer_momentum] = [lstate]
 
-    for k in sorted(data):
-        left_side_value = left_side(data[k], rstate.energy)
-        right_side_value = right_side(k, N, N)
-        print(k, left_side_value / right_side_value, "\n")
+    # for k in sorted(data):
+    #     left_side_value = left_side(data[k], rstate.energy)
+    #     right_side_value = right_side(k, N, N)
+    #     print(k, left_side_value / right_side_value, "\n")
+    print(compute_average_sumrule(data, rstate.energy, N, N))
