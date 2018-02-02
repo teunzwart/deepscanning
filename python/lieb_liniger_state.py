@@ -95,7 +95,7 @@ class lieb_liniger_state:
         self.calculate_norm()
 
 
-def generate_bethe_numbers(N, ref_state):
+def generate_bethe_numbers(N, ref_state, max_I = np.inf):
     """Generate Bethe numbers for excited states."""
     bethe_numbers = np.full(N, 10.**7, dtype=np.float)
     no_of_unique_entries = 0
@@ -106,10 +106,14 @@ def generate_bethe_numbers(N, ref_state):
 
         if (np.abs(bethe_numbers - random_number) < 10e-4).any():
             continue
+        # Implement a UV cutoff in Bethe number space.
+        elif abs(random_number) > max_I:
+            continue
         else:
             bethe_numbers[no_of_unique_entries] = random_number
             no_of_unique_entries += 1
-
+            
+    # Make sure we do not generate the reference state.
     if list(np.sort(bethe_numbers)) == ref_state:
         return generate_bethe_numbers(N, ref_state)
     else:
