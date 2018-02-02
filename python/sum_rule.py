@@ -27,7 +27,9 @@ def compute_average_sumrule(data, ref_energy, N, L):
     """
     sumrule = 0
     for momentum, states in data.items():
-        sumrule += left_side(states, ref_energy) / right_side(momentum, N, L)
+        if momentum != 0:
+            print(left_side(states, ref_energy), right_side(momentum, N, L))
+            sumrule += left_side(states, ref_energy) / right_side(momentum, N, L)
     return sumrule / len(data)
 
 
