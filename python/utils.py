@@ -36,3 +36,43 @@ def map_to_bethe_numbers(entire_space, max_I):
             bethe_numbers.append(i)
     # print(bethe_numbers)
     return np.array(bethe_numbers) - max_I
+
+
+def get_valid_random_action(state, interval_size):
+    """
+    Return a random valid random action.
+
+    The input state should be a map of the entire momentum subspace,
+    not Bethe numbers.
+    """
+    allowed = np.ones((interval_size, interval_size))
+    for i, k in enumerate(state):
+        # Mask removals from unoccupied sites.
+        if k == 0:
+            for z in range(len(state)):
+                allowed[i][z] = 0
+        # Mask additions to occupied sites.
+        if k == 1:
+            for z in range(len(state)):
+                allowed[z][i] = 0
+    allowed_indices = list(zip(*np.where(allowed == 1)))
+    return allowed_indices[np.random.choice(len(allowed_indices))]
+
+
+def is_valid_action(state, action, interval_size):
+    """Find if an action is valid (does not remove or add particles where that is not possible)."""
+    allowed = np.ones((interval_size, interval_size))
+    for i, k in enumerate(state):
+        # Mask removals from unoccupied sites.
+        if k == 0:
+            for z in range(len(state)):
+                allowed[i][z] = 0
+        # Mask additions to occupied sites.
+        if k == 1:
+            for z in range(len(state)):
+                allowed[z][i] = 0
+    allowed_indices = list(zip(*np.where(allowed == 1)))
+    if action in allowed_indices:
+        return True
+    else:
+        return False
