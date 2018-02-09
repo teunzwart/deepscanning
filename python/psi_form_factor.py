@@ -16,7 +16,7 @@ np.seterr(all='raise')
 def psi_form_factor(mu, lambda_):
     if list(mu.Is) == list(lambda_.Is):
         return mu.N / mu. L
-    elif mu.momentum == lambda_.momentum:
+    elif mu.integer_momentum == lambda_.integer_momentum:
         return 0
     momentum_sum = np.sum(mu.lambdas - lambda_.lambdas)
     # print("Kout", momentum_sum)
