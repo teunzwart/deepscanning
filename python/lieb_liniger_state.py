@@ -43,6 +43,7 @@ class lieb_liniger_state:
 
     def calculate_rapidities_newton(self, printing=False):
         """Calculate the rapidities using a multidimensional Newton method."""
+        # TODO: Implement relaxation as done by Caux.
         for no_of_iterations in range(20):
             rhs_bethe_equations = np.zeros(self.N)
             for j in range(self.N):
@@ -112,7 +113,7 @@ def generate_bethe_numbers(N, ref_state, max_I = np.inf):
         else:
             bethe_numbers[no_of_unique_entries] = random_number
             no_of_unique_entries += 1
-            
+
     # Make sure we do not generate the reference state.
     if list(np.sort(bethe_numbers)) == ref_state:
         return generate_bethe_numbers(N, ref_state)
