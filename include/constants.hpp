@@ -5,7 +5,6 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#include <cmath>
 #include <limits>
 
 const double PI = 3.141592653589793238462643;

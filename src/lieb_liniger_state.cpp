@@ -23,7 +23,6 @@ lieb_liniger_state::lieb_liniger_state(double new_c, double new_L,
       gaudin_matrix(new_N, new_N)
 {
     generate_gs_bethe_numbers();
-
 }
 
 /**
@@ -53,6 +52,10 @@ void lieb_liniger_state::generate_gs_bethe_numbers() {
     }
 }
 
+/**
+ * Find rapidities, using either machine learning or a bad guess
+ * for the initial rapidity values.
+ */
 void lieb_liniger_state::find_rapidities(bool use_machine_learning) {
     if (!use_machine_learning) {
         // Initial bad guess for the rapidities.
@@ -88,7 +91,7 @@ void lieb_liniger_state::calculate_rapidities_newton() {
 
         // Perform a step of the Newton method.
         calculate_gaudin_matrix();
-        // Partial LU decomposition may be used sinde the Gaudin matrix is non-singular.
+        // Partial LU decomposition may be used since the Gaudin matrix is non-singular.
         Eigen::VectorXd delta_lambda = gaudin_matrix.lu().solve(-rhs_bethe_equations);
 
         // Calculate the average difference squared of the rapidity changes.
@@ -153,14 +156,13 @@ Eigen::VectorXd generate_bethe_numbers(int N) {
 
     int no_of_unique_entries = 0;
     while (no_of_unique_entries < N) {
-        std::cout << bethe_numbers << std::endl;
         double random_number = std::round(normal_distribution(gen));
-        // std::cout << "rand num " << random_number << std::endl;
 
         // For N even Bethe numbers are half odd.
         if (N % 2 == 0) {
             random_number += std::copysign(1, sign_distribution(gen)) * 0.5;
         }
+        // Number already in Bethe numbers.
         if ((abs(bethe_numbers.array() - random_number) < 10e-4).any()) {
             continue;
         } else {
@@ -170,5 +172,7 @@ Eigen::VectorXd generate_bethe_numbers(int N) {
         
     }
 
-    return std::sort(bethe_numbers.data(), bethe_numbers.data() + bethe_numbers.size());
+    std::sort(bethe_numbers.data(), bethe_numbers.data() + bethe_numbers.size());
+     
+    return bethe_numbers;
 }

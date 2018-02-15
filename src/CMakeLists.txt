@@ -8,4 +8,4 @@ add_library(lieb_liniger_state lieb_liniger_state.cpp)
 target_link_libraries(lieb_liniger_state machine_learning Eigen3::Eigen)
 
 add_executable(main main.cpp)
-target_link_libraries(main lieb_liniger_state Eigen3::Eigen)
+target_link_libraries(main lieb_liniger_state Eigen3::Eigen TensorflowCC::Shared)
