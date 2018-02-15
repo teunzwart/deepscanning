@@ -19,25 +19,16 @@ def psi_form_factor(mu, lambda_):
     elif mu.integer_momentum == lambda_.integer_momentum:
         return 0
     momentum_sum = np.sum(mu.lambdas - lambda_.lambdas)
-    # print("Kout", momentum_sum)
     denominator = 1 / (V_plus(mu, lambda_, lambda_.lambdas[0]) - V_minus(mu, lambda_, lambda_.lambdas[0]))
-    # print("denom", 1/(V_plus(mu, lambda_, lambda_.lambdas[0]) - V_minus(mu, lambda_, lambda_.lambdas[0])))
     detpart = np.linalg.det(np.identity(mu.N) + construct_U(mu, lambda_))
-    # print("det(1 + U)", np.linalg.det(np.identity(mu.N) + construct_U(mu, lambda_)))
-    # print("log(det(1 + U))", np.log(np.linalg.det(np.identity(mu.N) + construct_U(mu, lambda_))))
-
-    # print("Vplus[0]", V_plus(mu, lambda_, lambda_.lambdas[0]))
-    # print("det_frac", detpart * denominator)
 
     prod1 = 1
     for j in range(mu.N):
         prod1 *= (V_plus(mu, lambda_, lambda_.lambdas[j]) - V_minus(mu, lambda_, lambda_.lambdas[j]))
-    # print("prod1", prod1)
     prod2 = 1
     for j in range(mu.N):
         for k in range(mu.N):
             prod2 *= (lambda_.lambdas[j] - lambda_.lambdas[k] + 1j * mu.c) / (mu.lambdas[j] - lambda_.lambdas[k])
-    # print("prod2", prod2)
     ff = momentum_sum * prod1 * prod2 * detpart * denominator
     return ff * 1j
 
@@ -64,14 +55,10 @@ def construct_U(mu, lambda_):
         products.append(product)
 
         for k in range(mu.N):
-            # print("part1", j, k, 1j * (mu.lambdas[j] - lambda_.lambdas[j]) / (V_plus(mu, lambda_, lambda_.lambdas[j]) - V_minus(mu, lambda_, lambda_.lambdas[j])))
             U[j, k] = 1j * (mu.lambdas[j] - lambda_.lambdas[j]) / (V_plus(mu, lambda_, lambda_.lambdas[j]) - V_minus(mu, lambda_, lambda_.lambdas[j]))
             kernel_part = (kernel(lambda_.lambdas[j] - lambda_.lambdas[k], mu.c) - kernel(lambda_.lambdas[0] - lambda_.lambdas[k], mu.c))
-            # print("kernel", j, k, kernel_part)
             U[j, k] *= products[j]
             U[j, k] *= kernel_part
-            # print(U[j, k])
-    # print("prods", products)
 
     return U
 
@@ -97,7 +84,7 @@ if __name__ == "__main__":
             print(np.real(ff**2))
 
     pickle.dump(data, open("data.p", "wb+"))
-        
+
 
 
 
