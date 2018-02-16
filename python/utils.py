@@ -19,6 +19,7 @@ def map_to_entire_space(bethe_numbers, max_I):
     """Map Bethe numbers to a vector of 1s and 0s on the interval [-max_I, max_I]."""
     # TODO: Fix this.
     if len(bethe_numbers) % 2 == 0:
+        print(bethe_numbers)
         sys.exit("Can't handle even state mapping.")
     transformed_bethe_numbers = np.array(bethe_numbers, dtype=np.int) + max_I
     entire_space = np.zeros(2 * max_I + 1)
@@ -72,7 +73,9 @@ def is_valid_action(state, action, interval_size):
             for z in range(len(state)):
                 allowed[z][i] = 0
     allowed_indices = list(zip(*np.where(allowed == 1)))
-    if action in allowed_indices:
+    # print(allowed_indices)
+    # print(action)
+    if action[1] in allowed_indices:
         return True
     else:
         return False
