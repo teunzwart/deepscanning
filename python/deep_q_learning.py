@@ -49,7 +49,23 @@ def distance_to_rstate(lstate, rstate):
     return distance
 
 
-def q_learning(N_world, max_I, L, N, gamma=0.975, epochs=100, epsilon=1, no_of_steps=100):
+def epsilon_greedy(qval, state, previously_visited, epsilon, N_world):
+    if np.random.random() < epsilon:
+        while True:
+            action = get_valid_random_action(state, N_world)
+            new_state = change_state(state, action)
+            if list(new_state) not in previously_visited:
+                return new_state, action
+    else:
+        for a in array_to_list(qval.reshape(N_world, N_world)):
+            if is_valid_action(state, a[1], N_world):
+                action = a[1]
+                new_state = change_state(state, action)
+                if list(new_state) not in previously_visited:
+                    return new_state, action
+
+
+def q_learning(N_world, max_I, L, N, gamma=0.975, epochs=100, epsilon=0.1, no_of_steps=100):
     model = neural_net(N_world)
     rstate = lls.lieb_liniger_state(1, L, N)
     rstate.calculate_all()
@@ -60,23 +76,10 @@ def q_learning(N_world, max_I, L, N, gamma=0.975, epochs=100, epsilon=1, no_of_s
         print(f"Epoch {t}")
         dsf_data = {}
         previously_visited = []
-        lstate = lls.lieb_liniger_state(1, L, N)
-        lstate.calculate_all()
+        state = map_to_entire_space(rstate.Is, max_I)
         for n in range(no_of_steps + 1):
-            Q = model.predict(map_to_entire_space(lstate.Is, max_I).reshape(1, -1))
-            if np.random.random() < epsilon:
-                while True:
-                    action = get_valid_random_action(map_to_entire_space(lstate.Is, max_I), N_world)
-                    new_state = change_state(map_to_entire_space(lstate.Is, max_I), action)
-                    if list(new_state) not in previously_visited:
-                        break
-            else:
-                for a in array_to_list(Q.reshape(N_world, N_world)):
-                    if is_valid_action(map_to_entire_space(lstate.Is, max_I), a, N_world):
-                        action = a[1]
-                        new_state = change_state(map_to_entire_space(lstate.Is, max_I), action)
-                        if list(new_state) not in previously_visited:
-                            break
+            Q = model.predict(state.reshape(1, -1))
+            new_state, action = epsilon_greedy(Q, state, previously_visited, epsilon, N_world)
             previously_visited.append(list(new_state))
             new_lstate = lls.lieb_liniger_state(1, N, L, map_to_bethe_numbers(new_state, max_I))
             new_lstate.calculate_all()
@@ -91,22 +94,20 @@ def q_learning(N_world, max_I, L, N, gamma=0.975, epochs=100, epsilon=1, no_of_s
             update = reward + gamma * new_max_Q
             y[np.ravel_multi_index(action, (N_world, N_world))] = update
 
-            # print(map_to_entire_space(lstate.Is, max_I).shape)
-            # print(y.shape)
-            model.fit(map_to_entire_space(lstate.Is, max_I).reshape(1, -1), y.reshape(1, -1), verbose=0)
+            model.fit(state.reshape(1, -1), y.reshape(1, -1), verbose=0)
 
             lstate = lls.lieb_liniger_state(1, L, N, map_to_bethe_numbers(new_state, max_I))
             lstate.calculate_all()
             previously_visited.append(list(new_state))
 
             lstate.ff = rff.calculate_normalized_form_factor(lstate, rstate)
-            # print(np.abs(lstate.ff)**2)
-            # print(lstate.integer_momentum)
 
             if lstate.integer_momentum in dsf_data.keys():
                 dsf_data[lstate.integer_momentum].append(lstate)
             else:
                 dsf_data[lstate.integer_momentum] = [lstate]
+            sys.stdout.write(f"n={n}, {compute_average_sumrule(dsf_data, rstate.energy, N, L, False)}, {highest} \r")
+            sys.stdout.flush()
 
         ave_sum_rule = compute_average_sumrule(dsf_data, rstate.energy, N, L, False)
         sums.append(ave_sum_rule)
