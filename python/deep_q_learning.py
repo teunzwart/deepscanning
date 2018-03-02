@@ -52,6 +52,15 @@ def getReward(ff, lstate, rstate, N_world):
         return -1
 
 
+def get_reward_at_final_step(dsf_data, n, no_of_steps, L, N):
+    if n == no_of_steps:
+        state = lls.lieb_liniger_state(1, L, N)
+        state.calculate_all()
+        return compute_average_sumrule(dsf_data, state.energy, L, N,)
+    else:
+        return 0
+
+
 def distance_to_rstate(lstate, rstate):
     """Calculate the 'distance' between lstate and rstate."""
     distance = 0
@@ -87,6 +96,7 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, epochs=100, epsilon=1, no_of_s
     rstate.calculate_all()
     highest_achieved_sumrule = 0
     sums = []
+    best_sums = []
     best_dsf = None
     for i in range(1, epochs + 1):
         dsf_data = {}
@@ -102,7 +112,8 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, epochs=100, epsilon=1, no_of_s
             new_lstate.ff = rff.calculate_normalized_form_factor(new_lstate, rstate)
 
             # reward = get_reward(new_lstate, rstate)
-            reward = getReward(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
+            # reward = getReward(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
+            reward = get_reward_at_final_step(dsf_data, n, no_of_steps, L, N)
 
             if new_lstate.integer_momentum in dsf_data.keys():
                 dsf_data[new_lstate.integer_momentum].append(new_lstate)
@@ -127,22 +138,22 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, epochs=100, epsilon=1, no_of_s
 
             state = new_state
 
-            sys.stdout.write(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {compute_average_sumrule(dsf_data, rstate.energy, N, L, False):.10f}, best sumrule: {highest_achieved_sumrule:.10f} \r")
+            sys.stdout.write(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {compute_average_sumrule(dsf_data, rstate.energy, L, N, False):.10f}, best sumrule: {highest_achieved_sumrule:.10f} \r")
             sys.stdout.flush()
 
         if epsilon > 0.1:
             epsilon -= 1 / epochs
 
-        ave_sum_rule = compute_average_sumrule(dsf_data, rstate.energy, N, L, False)
+        ave_sum_rule = compute_average_sumrule(dsf_data, rstate.energy, L, N, False)
         sums.append(ave_sum_rule)
         print(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {ave_sum_rule:.10f}, best sumrule: {highest_achieved_sumrule:.10f}")
         if ave_sum_rule > highest_achieved_sumrule:
             highest_achieved_sumrule = ave_sum_rule
             best_dsf = dsf_data
+        best_sums.append(highest_achieved_sumrule)
 
-    print("highest", highest_achieved_sumrule)
     print(sums)
-    return model, best_dsf
+    return model, best_dsf, sums, best_sums
 
 
 if __name__ == "__main__":
