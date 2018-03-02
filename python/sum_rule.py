@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def right_side(k, N, L):
+def right_side(k, L, N):
     """Calculate RHS of f-sum rule."""
     return 4 * np.pi**2 * N / L**4 * k**2
 
@@ -14,7 +14,7 @@ def left_side(list_of_states, ref_energy):
     return sumrule_sum
 
 
-def compute_average_sumrule(data, ref_energy, N, L, print_all=False):
+def compute_average_sumrule(data, ref_energy, L, N, print_all=False):
     """
     Compute the average sumrule over all momentum slices.
 
@@ -23,11 +23,11 @@ def compute_average_sumrule(data, ref_energy, N, L, print_all=False):
     """
     sumrule = 0
     no_of_momentum_slices = 0
-    for momentum, states in data.items():
+    for momentum, states in sorted(data.items()):
         if momentum != 0:
             if print_all:
-                print(f"{momentum}: {left_side(states, ref_energy)} {right_side(momentum, N, L)}  {left_side(states, ref_energy) / right_side(momentum, N, L)}")
-            sumrule += left_side(states, ref_energy) / right_side(momentum, N, L)
+                print(f"{momentum:3}: {left_side(states, ref_energy):.20f} {right_side(momentum, L, N):.20f}  {left_side(states, ref_energy) / right_side(momentum, L, N):.20f}")
+            sumrule += left_side(states, ref_energy) / right_side(momentum, L, N)
             no_of_momentum_slices += 1
     return sumrule / no_of_momentum_slices
 
@@ -37,15 +37,15 @@ if __name__ == "__main__":
     import copy
     import lieb_liniger_state as lls
 
-    N = 10
+    L = N = 9
     data = {}
-    rstate = lls.lieb_liniger_state(1, N, N)
+    rstate = lls.lieb_liniger_state(1, L, N)
     rstate.calculate_all()
     bethe_numbers = copy.copy(rstate.Is)
     for k in range(1000):
         # bethe_numbers = lls.generate_bethe_numbers(N, list(rstate.Is))
         bethe_numbers[-1] += 1
-        lstate = lls.lieb_liniger_state(1, N, N, bethe_numbers)
+        lstate = lls.lieb_liniger_state(1, L, N, bethe_numbers)
         lstate.calculate_all()
         lstate.ff = rff.calculate_normalized_form_factor(lstate, rstate)
         integer_momentum = lstate.integer_momentum
