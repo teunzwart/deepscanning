@@ -96,7 +96,7 @@ class lieb_liniger_state:
         self.calculate_norm()
 
 
-def generate_bethe_numbers(N, ref_state, max_I = np.inf):
+def generate_bethe_numbers(N, ref_state=[], max_I=np.inf):
     """Generate Bethe numbers for excited states."""
     bethe_numbers = np.full(N, 10.**7, dtype=np.float)
     no_of_unique_entries = 0
