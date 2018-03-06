@@ -1,17 +1,17 @@
 """Based in part on http://outlace.com/rlpart3.html"""
 
-import copy
 import sys
 
 import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import RMSprop
+from scipy.misc import comb
 
 import lieb_liniger_state as lls
 import rho_form_factor as rff
-from sum_rule import compute_average_sumrule
-from utils import map_to_entire_space, map_to_bethe_numbers, get_valid_random_action, is_valid_action, array_to_list
+from sum_rule import compute_average_sumrule, left_side, right_side
+from utils import map_to_entire_space, map_to_bethe_numbers, get_valid_random_action, is_valid_action, array_to_list, get_largest_allowed_Q_value, change_state
 
 
 def neural_net(N_world):
@@ -32,33 +32,42 @@ def neural_net(N_world):
     # return model
 
 
-def change_state(state, action):
-    new_state = copy.copy(state)
-    new_state[action[0]] -= 1
-    new_state[action[1]] += 1
-    return new_state
-
-
-def get_reward(lstate, rstate):
+def get_formfactor_reward(lstate, rstate):
     return (lstate.energy - rstate.energy) * np.abs(rff.calculate_normalized_form_factor(lstate, rstate))**2
 
 
-def getReward(ff, lstate, rstate, N_world):
+def get_reward_for_large_formfactors(ff, lstate, rstate, N_world):
     if np.abs(ff) > 0.00001:
         return np.abs(ff)**0.1
     elif distance_to_rstate(lstate, rstate) < N_world**0.5:
         return distance_to_rstate(lstate, rstate)**0.1
     else:
-        return -1
+        return 0
 
 
 def get_reward_at_final_step(dsf_data, n, no_of_steps, L, N):
+    # Quite logical that this does not perform well since it puts all reward into single place, which means learning (if any) is very slow.
     if n == no_of_steps:
         state = lls.lieb_liniger_state(1, L, N)
         state.calculate_all()
         return compute_average_sumrule(dsf_data, state.energy, L, N,)
     else:
         return 0
+
+
+def get_partial_sumrule_reward_at_every_step(dsf_data, n, no_of_steps, L, N):
+    state = lls.lieb_liniger_state(1, L, N)
+    state.calculate_all()
+    if state.momentum != 0:
+        return left_side(states, state.ref_energy) / right_side(state.momentum, L, N)
+    else:
+        return 0
+
+
+def get_full_sumrule_reward_at_every_step(dsf_data, L, N):
+    state = lls.lieb_liniger_state(1, L, N)
+    state.calculate_all()
+    return compute_average_sumrule(dsf_data, state.energy, L, N,)
 
 
 def distance_to_rstate(lstate, rstate):
@@ -78,19 +87,14 @@ def epsilon_greedy(qval, state, previously_visited, epsilon, N_world):
                 return new_state, action
     else:
         for a in array_to_list(qval.reshape(N_world, N_world)):
-            # print(a)
-            # print(state)
-            # print(is_valid_action(state, a[1], N_world))
             if is_valid_action(state, a[1], N_world):
                 action = a[1]
-                # sys.stdout.write(f"{state}, {a}\r")
-                # sys.stdout.flush()
                 new_state = change_state(state, action)
                 if list(new_state) not in previously_visited:
                     return new_state, action
 
 
-def q_learning(N_world, I_max, L, N, gamma=0.975, epochs=100, epsilon=1, no_of_steps=100):
+def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1, no_of_steps=100):
     model = neural_net(N_world)
     rstate = lls.lieb_liniger_state(1, L, N)
     rstate.calculate_all()
@@ -98,6 +102,7 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, epochs=100, epsilon=1, no_of_s
     sums = []
     best_sums = []
     best_dsf = None
+    print(f"Size of search space is Choose[N_world, N]={comb(N_world, N):.3e}")
     for i in range(1, epochs + 1):
         dsf_data = {}
         previously_visited_states = []
@@ -111,9 +116,11 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, epochs=100, epsilon=1, no_of_s
             new_lstate.calculate_all()
             new_lstate.ff = rff.calculate_normalized_form_factor(new_lstate, rstate)
 
-            # reward = get_reward(new_lstate, rstate)
-            # reward = getReward(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
-            reward = get_reward_at_final_step(dsf_data, n, no_of_steps, L, N)
+            # reward = get_formfactor_reward(new_lstate, rstate)
+            reward = get_reward_for_large_formfactors(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
+            # reward = get_partial_sumrule_reward_at_every_step(dsf_data, n, no_of_steps, L, N)
+            # reward = get_reward_at_final_step(dsf_data, n, no_of_steps, L, N)
+            # reward = get_full_sumrule_reward_at_every_step(dsf_data, L, N)
 
             if new_lstate.integer_momentum in dsf_data.keys():
                 dsf_data[new_lstate.integer_momentum].append(new_lstate)
@@ -122,17 +129,18 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, epochs=100, epsilon=1, no_of_s
 
             new_Q = model.predict(new_state.reshape(1, -1), batch_size=1)
             # TODO: This should be the largest allowed Q value.
-            new_max_Q = np.max(new_Q)
+            # new_max_Q = np.max(new_Q)
+            new_max_Q = get_largest_allowed_Q_value(new_Q, new_state, previously_visited_states, N_world)
 
             y = np.zeros((1, N_world * N_world))
             y[:] = Q[:]
 
             if n == no_of_steps:
-                update = reward
+                update = alpha * reward
             else:
-                update = reward + gamma * new_max_Q
+                update = alpha * (reward + gamma * new_max_Q)
 
-            y[0][np.ravel_multi_index(action, (N_world, N_world))] = update
+            y[0][np.ravel_multi_index(action, (N_world, N_world))] = (1 - alpha) * y[0][np.ravel_multi_index(action, (N_world, N_world))] + alpha * update
             # A batch size 1 makes a huge positive difference in learning performance (probably because there is less overfitting to the single data point).
             model.fit(state.reshape(1, -1), y, batch_size=1, verbose=0)
 
