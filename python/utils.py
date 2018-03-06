@@ -11,18 +11,6 @@ def change_state(state, action):
     return new_state
 
 
-def array_to_list(a):
-    """
-    Map element of an 2D array to a list of [value, coordinate] pairs.
-    The list is sorted on the values, in decreasing order.
-    """
-    shape = a.shape
-    value_list = []
-    for i, a in enumerate(a.flatten()):
-        value_list.append([a, np.unravel_index(i, shape)])
-    return sorted(value_list, key=lambda x: x[0])[::-1]
-
-
 def map_to_entire_space(bethe_numbers, max_I):
     """Map Bethe numbers to a vector of 1s and 0s on the interval [-max_I, max_I]."""
     # TODO: Fix this.
@@ -47,6 +35,18 @@ def map_to_bethe_numbers(entire_space, max_I):
     return np.array(bethe_numbers) - max_I
 
 
+def get_allowed_indices(state, interval_size):
+    allowed = np.ones((interval_size, interval_size))
+    for i, k in enumerate(state):
+        # Mask removals from unoccupied sites.
+        if k == 0:
+            allowed[i] = 0
+        # Mask additions to occupied sites.
+        if k == 1:
+            allowed[:, i] = 0
+    return list(zip(*np.where(allowed == 1)))
+
+
 def get_valid_random_action(state, interval_size):
     """
     Return a random valid random action.
@@ -54,43 +54,21 @@ def get_valid_random_action(state, interval_size):
     The input state should be a map of the entire momentum subspace,
     not Bethe numbers.
     """
-    allowed = np.ones((interval_size, interval_size))
-    for i, k in enumerate(state):
-        # Mask removals from unoccupied sites.
-        if k == 0:
-            for z in range(len(state)):
-                allowed[i][z] = 0
-        # Mask additions to occupied sites.
-        if k == 1:
-            for z in range(len(state)):
-                allowed[z][i] = 0
-    allowed_indices = list(zip(*np.where(allowed == 1)))
+    allowed_indices = get_allowed_indices(state, interval_size)
     return allowed_indices[np.random.choice(len(allowed_indices))]
 
 
 def is_valid_action(state, action, interval_size):
     """Find if an action is valid (does not remove or add particles where that is not possible)."""
-    allowed = np.ones((interval_size, interval_size))
-    for i, k in enumerate(state):
-        # Mask removals from unoccupied sites.
-        if k == 0:
-            for z in range(len(state)):
-                allowed[i][z] = 0
-        # Mask additions to occupied sites.
-        if k == 1:
-            for z in range(len(state)):
-                allowed[z][i] = 0
-    allowed_indices = list(zip(*np.where(allowed == 1)))
-    if action in allowed_indices:
+    if action in get_allowed_indices(state, interval_size):
         return True
     else:
         return False
 
 
 def get_largest_allowed_Q_value(Q, state, previously_visited_states, N_world):
-    for a in array_to_list(Q.reshape(N_world, N_world)):
-            if is_valid_action(state, a[1], N_world):
-                action = a[1]
-                new_state = change_state(state, action)
-                if list(new_state) not in previously_visited_states:
-                    return a[0]
+    for action in Q.flatten().argsort()[::-1]:
+        if is_valid_action(state, np.unravel_index(action, (N_world, N_world)), N_world):
+            new_state = change_state(state, np.unravel_index(action, (N_world, N_world)))
+            if list(new_state) not in previously_visited_states:
+                return new_state, action, Q[0][action]
