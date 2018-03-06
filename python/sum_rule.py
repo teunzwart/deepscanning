@@ -1,9 +1,9 @@
 import numpy as np
 
 
-def right_side(k, L, N):
+def right_side(I, L, N):
     """Calculate RHS of f-sum rule."""
-    return 4 * np.pi**2 * N / L**4 * k**2
+    return 4 * np.pi**2 * N / L**4 * I**2
 
 
 def left_side(list_of_states, ref_energy):
