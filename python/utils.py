@@ -1,6 +1,14 @@
+import copy
 import sys
 
 import numpy as np
+
+
+def change_state(state, action):
+    new_state = copy.copy(state)
+    new_state[action[0]] -= 1
+    new_state[action[1]] += 1
+    return new_state
 
 
 def array_to_list(a):
@@ -77,3 +85,12 @@ def is_valid_action(state, action, interval_size):
         return True
     else:
         return False
+
+
+def get_largest_allowed_Q_value(Q, state, previously_visited_states, N_world):
+    for a in array_to_list(Q.reshape(N_world, N_world)):
+            if is_valid_action(state, a[1], N_world):
+                action = a[1]
+                new_state = change_state(state, action)
+                if list(new_state) not in previously_visited_states:
+                    return a[0]
