@@ -73,9 +73,7 @@ def is_valid_action(state, action, interval_size):
             for z in range(len(state)):
                 allowed[z][i] = 0
     allowed_indices = list(zip(*np.where(allowed == 1)))
-    # print(allowed_indices)
-    # print(action)
-    if action[1] in allowed_indices:
+    if action in allowed_indices:
         return True
     else:
         return False

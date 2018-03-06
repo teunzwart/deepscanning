@@ -21,12 +21,15 @@ def compute_average_sumrule(data, ref_energy, L, N, print_all=False):
     data: dictionary with momenta as keys and states as values
     ref_energy: energy of the reference state
     """
+    # Catch empty dictionaries.
+    if not data:
+        return 0
     sumrule = 0
     no_of_momentum_slices = 0
     for momentum, states in sorted(data.items()):
         if momentum != 0:
             if print_all:
-                print(f"{momentum:3}: {left_side(states, ref_energy):.20f} {right_side(momentum, L, N):.20f}  {left_side(states, ref_energy) / right_side(momentum, L, N):.20f}")
+                print(f"{momentum:3}: {left_side(states, ref_energy) / right_side(momentum, L, N):.20f}")
             sumrule += left_side(states, ref_energy) / right_side(momentum, L, N)
             no_of_momentum_slices += 1
     return sumrule / no_of_momentum_slices
