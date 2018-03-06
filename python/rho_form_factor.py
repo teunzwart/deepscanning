@@ -19,12 +19,13 @@ def psi_form_factor(mu, lambda_):
     elif mu.integer_momentum == lambda_.integer_momentum:
         return 0
     momentum_sum = np.sum(mu.lambdas - lambda_.lambdas)
-    denominator = 1 / (V_plus(mu, lambda_, lambda_.lambdas[0]) - V_minus(mu, lambda_, lambda_.lambdas[0]))
-    detpart = np.linalg.det(np.identity(mu.N) + construct_U(mu, lambda_))
+    denominator = -0.5 * 1j / np.imag(V_plus(mu, lambda_, lambda_.lambdas[0]))
+    U = construct_U(mu, lambda_)
+    detpart = np.linalg.det(np.identity(mu.N) + U)
 
     prod1 = 1
     for j in range(mu.N):
-        prod1 *= (V_plus(mu, lambda_, lambda_.lambdas[j]) - V_minus(mu, lambda_, lambda_.lambdas[j]))
+        prod1 *= 2 * 1j * np.imag(V_plus(mu, lambda_, lambda_.lambdas[j]))
     prod2 = 1
     for j in range(mu.N):
         for k in range(mu.N):
@@ -34,14 +35,7 @@ def psi_form_factor(mu, lambda_):
 
 
 def V_plus(mu, lambda_, lambda_j):
-    product = 1 + 0 * 1j
-    for m in range(mu.N):
-        product *= (mu.lambdas[m] - lambda_j + 1j * mu.c) / (lambda_.lambdas[m] - lambda_j + 1j * mu.c)
-    return product
-
-
-def V_minus(mu, lambda_, lambda_j):
-    return np.conj(V_plus(mu, lambda_, lambda_j))
+    return np.prod((mu.lambdas - lambda_j + 1j * mu.c) / (lambda_.lambdas - lambda_j + 1j * mu.c))
 
 
 def construct_U(mu, lambda_):
@@ -55,7 +49,7 @@ def construct_U(mu, lambda_):
         products.append(product)
 
         for k in range(mu.N):
-            U[j, k] = 1j * (mu.lambdas[j] - lambda_.lambdas[j]) / (V_plus(mu, lambda_, lambda_.lambdas[j]) - V_minus(mu, lambda_, lambda_.lambdas[j]))
+            U[j, k] = 0.5 * (mu.lambdas[j] - lambda_.lambdas[j]) / np.imag(V_plus(mu, lambda_, lambda_.lambdas[j]))
             kernel_part = (kernel(lambda_.lambdas[j] - lambda_.lambdas[k], mu.c) - kernel(lambda_.lambdas[0] - lambda_.lambdas[k], mu.c))
             U[j, k] *= products[j]
             U[j, k] *= kernel_part
