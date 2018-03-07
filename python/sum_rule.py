@@ -14,7 +14,7 @@ def left_side(list_of_states, ref_energy):
     return sumrule_sum
 
 
-def compute_average_sumrule(data, ref_energy, L, N, print_all=False):
+def compute_average_sumrule(data, ref_energy, L, N, max_I, N_world, print_all=False):
     """
     Compute the average sumrule over all momentum slices.
 
@@ -25,14 +25,13 @@ def compute_average_sumrule(data, ref_energy, L, N, print_all=False):
     if not data:
         return 0
     sumrule = 0
-    no_of_momentum_slices = 0
-    for momentum, states in sorted(data.items()):
-        if momentum != 0:
+    for i in range(-max_I, max_I + 1):
+        states = data.get(i, [])
+        if i != 0:
             if print_all:
-                print(f"{momentum:3}: {left_side(states, ref_energy) / right_side(momentum, L, N):.20f}")
-            sumrule += left_side(states, ref_energy) / right_side(momentum, L, N)
-            no_of_momentum_slices += 1
-    return sumrule / no_of_momentum_slices
+                print(f"{i:3}: {left_side(states, ref_energy) / right_side(i, L, N):.20f}")
+            sumrule += left_side(states, ref_energy) / right_side(i, L, N)
+    return sumrule / (N_world - 1)
 
 
 if __name__ == "__main__":

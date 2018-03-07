@@ -89,14 +89,15 @@ def epsilon_greedy(qval, state, previously_visited, epsilon, N_world):
         return get_largest_allowed_Q_value(qval, state, previously_visited, N_world)
 
 
-def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1, no_of_steps=100):
-    model = neural_net(N_world)
+def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1, no_of_steps=100, model=None, best_dsf=None):
+    # Allow for further training of a given model.
+    if not model:
+        model = neural_net(N_world)
     rstate = lls.lieb_liniger_state(1, L, N)
     rstate.calculate_all()
     highest_achieved_sumrule = 0
     sums = []
     best_sums = []
-    best_dsf = None
     print(f"Size of search space is Choose[N_world, N]={comb(N_world, N):.3e}")
     for i in range(1, epochs + 1):
         dsf_data = {}
@@ -117,14 +118,12 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
                 dsf_data[new_lstate.integer_momentum] = [new_lstate]
             
             # reward = get_formfactor_reward(new_lstate, rstate)
-            # reward = get_reward_for_large_formfactors(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
-            reward = get_partial_sumrule_reward_at_every_step(dsf_data, n, no_of_steps, L, N, new_lstate)
+            reward = get_reward_for_large_formfactors(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
+            # reward = get_partial_sumrule_reward_at_every_step(dsf_data, n, no_of_steps, L, N, new_lstate)
             # reward = get_reward_at_final_step(dsf_data, n, no_of_steps, L, N)
             # reward = get_full_sumrule_reward_at_every_step(dsf_data, L, N)
 
             new_Q = model.predict(new_state.reshape(1, -1), batch_size=1)
-            # TODO: This should be the largest allowed Q value.
-            # new_max_Q = np.max(new_Q)
             _, _, new_max_Q = get_largest_allowed_Q_value(new_Q, new_state, previously_visited_states, N_world)
 
             y = np.zeros((1, N_world * N_world))
@@ -141,13 +140,13 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
 
             state = new_state
 
-            sys.stdout.write(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {compute_average_sumrule(dsf_data, rstate.energy, L, N, False):.10f}, best sumrule: {highest_achieved_sumrule:.10f} \r")
+            sys.stdout.write(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False):.10f}, best sumrule: {highest_achieved_sumrule:.10f} \r")
             sys.stdout.flush()
 
         if epsilon > 0.1:
             epsilon -= 1 / epochs
 
-        ave_sum_rule = compute_average_sumrule(dsf_data, rstate.energy, L, N, False)
+        ave_sum_rule = compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False)
         sums.append(ave_sum_rule)
         print(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {ave_sum_rule:.10f}, best sumrule: {highest_achieved_sumrule:.10f}")
         if ave_sum_rule > highest_achieved_sumrule:
@@ -155,7 +154,6 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
             best_dsf = dsf_data
         best_sums.append(highest_achieved_sumrule)
 
-    print(sums)
     return model, best_dsf, sums, best_sums
 
 
