@@ -1,6 +1,6 @@
 """
 Calculate the \rho(x=0) matrix element for the Lieb-Liniger model,
-as presented by Piroli and Calabrese.
+as presented by De Nardis and Panfil.
 """
 
 import pickle
@@ -10,10 +10,8 @@ import numpy as np
 import lieb_liniger_state as lls
 kernel = lls.lieb_liniger_state.kernel
 
-np.seterr(all='raise')
 
-
-def psi_form_factor(mu, lambda_):
+def rho_form_factor(mu, lambda_):
     if list(mu.Is) == list(lambda_.Is):
         return mu.N / mu. L
     elif mu.integer_momentum == lambda_.integer_momentum:
@@ -58,7 +56,7 @@ def construct_U(mu, lambda_):
 
 
 def calculate_normalized_form_factor(mu, lambda_):
-    unnormalized_ff = psi_form_factor(mu, lambda_)
+    unnormalized_ff = rho_form_factor(mu, lambda_)
     return unnormalized_ff / np.sqrt(mu.norm * lambda_.norm)
 
 
