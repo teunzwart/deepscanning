@@ -12,7 +12,7 @@ from scipy.misc import comb
 import lieb_liniger_state as lls
 import rho_form_factor as rff
 from sum_rule import compute_average_sumrule, left_side, right_side
-from utils import map_to_entire_space, map_to_bethe_numbers, get_valid_random_action, get_largest_allowed_Q_value, change_state, no_of_particle_hole_pairs, get_allowed_indices
+from utils import map_to_entire_space, map_to_bethe_numbers, get_valid_random_action, get_largest_allowed_Q_value, change_state, no_of_particle_hole_pairs, get_allowed_indices, select_action
 
 
 def neural_net(N_world):
@@ -100,20 +100,10 @@ def epsilon_greedy(qval, state, previously_visited, epsilon, max_I, N_world, N, 
     if np.random.random() < epsilon:
         allowed_actions = get_allowed_indices(state, N_world)
         np.random.shuffle(allowed_actions)
-        allowed_no_of_ph_pairs = 1
-        while True:
-            for action in allowed_actions:
-                new_state = change_state(state, action)
-                if (list(new_state) not in previously_visited) and (abs(sum(map_to_bethe_numbers(new_state, max_I))) <= max_I):
-                    if check_no_of_pairs and no_of_particle_hole_pairs(new_state, previously_visited[0], N) == allowed_no_of_ph_pairs:
-                        return new_state, np.ravel_multi_index(action, (N_world, N_world)), 0
-                    elif check_no_of_pairs:
-                        continue
-                    else:
-                        return new_state, np.ravel_multi_index(action, (N_world, N_world)), 0
-            allowed_no_of_ph_pairs += 1
+        return select_action(allowed_actions, state, previously_visited, max_I, N_world, N, check_no_of_pairs)
+
     else:
-        return get_largest_allowed_Q_value(qval, state, previously_visited, max_I, N_world, N, check_no_of_pairs)
+        return select_action(list(zip(*np.unravel_index(qval[0].argsort(), (N_world, N_world)))), state, previously_visited, max_I, N_world, N, check_no_of_pairs)
 
 
 def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1, no_of_steps=100, model=None, best_dsf=None):
@@ -133,7 +123,7 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
         previously_visited_states.append(list(state))
         for n in range(1, no_of_steps + 1):
             Q = model.predict(state.reshape(1, -1), batch_size=1)
-            new_state, action, _ = epsilon_greedy(Q, state, previously_visited_states, epsilon, I_max, N_world, N)
+            new_state, action = epsilon_greedy(Q, state, previously_visited_states, epsilon, I_max, N_world, N)
             previously_visited_states.append(list(new_state))
 
             new_lstate = lls.lieb_liniger_state(1, L, N, map_to_bethe_numbers(new_state, I_max))
@@ -145,10 +135,14 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
             else:
                 dsf_data[new_lstate.integer_momentum] = [new_lstate]
 
-            reward = get_reward_for_large_formfactors(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
+            # reward = get_reward_for_large_formfactors(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
+            reward = get_formfactor_reward(new_lstate, rstate)
 
             new_Q = model.predict(new_state.reshape(1, -1), batch_size=1)
-            _, _, new_max_Q = get_largest_allowed_Q_value(new_Q, new_state, previously_visited_states, I_max, N_world, N)
+            _, new_action = select_action(list(zip(*np.unravel_index(new_Q[0].argsort(), (N_world, N_world)))), state, previously_visited_states, I_max, N_world, N, check_no_of_pairs=True)
+            # print(new_action)
+            new_best_action = np.ravel_multi_index(new_action, (N_world, N_world))
+            new_max_Q = new_Q[0][new_best_action]
 
             y = np.zeros((1, N_world * N_world))
             y[:] = Q[:]
@@ -158,14 +152,14 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
             else:
                 update = alpha * (reward + gamma * new_max_Q)
 
-            y[0][action] = (1 - alpha) * y[0][action] + alpha * update
+            y[0][new_best_action] = (1 - alpha) * y[0][new_best_action] + alpha * update
             # A batch size 1 makes a huge positive difference in learning performance (probably because there is less overfitting to the single data point).
             model.fit(state.reshape(1, -1), y, batch_size=1, verbose=0)
 
             state = new_state
 
-            # sys.stdout.write(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False):.10f}, best sumrule: {highest_achieved_sumrule:.10f}\r")
-            # sys.stdout.flush()
+            sys.stdout.write(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False):.10f}, best sumrule: {highest_achieved_sumrule:.10f}\r")
+            sys.stdout.flush()
 
         if epsilon > 0.1:
             epsilon -= 1 / epochs
