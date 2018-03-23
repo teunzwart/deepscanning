@@ -131,10 +131,6 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
         previously_visited_states = []
         state = np.array(map_to_entire_space(rstate.Is, I_max), dtype=np.int)
         previously_visited_states.append(list(state))
-        prev_sumrule = 0
-        # if i % 10 == 0:
-        #     plt.imshow(model.predict(state.reshape(1, -1), batch_size=1).reshape(N_world, N_world))
-        #     plt.show()
         for n in range(1, no_of_steps + 1):
             Q = model.predict(state.reshape(1, -1), batch_size=1)
             new_state, action, _ = epsilon_greedy(Q, state, previously_visited_states, epsilon, I_max, N_world, N)
@@ -149,17 +145,7 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
             else:
                 dsf_data[new_lstate.integer_momentum] = [new_lstate]
 
-            # reward = get_formfactor_reward(new_lstate, rstate)
             reward = get_reward_for_large_formfactors(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
-            # reward = get_partial_sumrule_reward_at_every_step(dsf_data, n, no_of_steps, L, N, new_lstate)
-            # reward = get_reward_at_final_step(dsf_data, n, no_of_steps, L, N, I_max, N_world)
-            # reward = get_full_sumrule_reward_at_every_step(dsf_data, L, N)
-            # reward = get_reward_delta_sumrule(dsf_data, L, N, I_max, N_world, prev_sumrule)
-            # reward = get_relative_contribution_reward(dsf_data, L, N, I_max, N_world, n)
-            # reward = get_relative_reward_per_slice(dsf_data, L, N, I_max, N_world, new_lstate.integer_momentum)
-            # print(reward, "\n")
-
-            prev_sumrule = compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False)
 
             new_Q = model.predict(new_state.reshape(1, -1), batch_size=1)
             _, _, new_max_Q = get_largest_allowed_Q_value(new_Q, new_state, previously_visited_states, I_max, N_world, N)
@@ -178,8 +164,8 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
 
             state = new_state
 
-            sys.stdout.write(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False):.10f}, best sumrule: {highest_achieved_sumrule:.10f}\r")
-            sys.stdout.flush()
+            # sys.stdout.write(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False):.10f}, best sumrule: {highest_achieved_sumrule:.10f}\r")
+            # sys.stdout.flush()
 
         if epsilon > 0.1:
             epsilon -= 1 / epochs
