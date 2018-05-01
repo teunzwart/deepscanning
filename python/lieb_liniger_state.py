@@ -41,10 +41,13 @@ class lieb_liniger_state:
                 else:
                     self.gaudin_matrix[j, k] = -self.kernel(self.lambdas[j] - self.lambdas[k], self.c)
 
-    def calculate_rapidities_newton(self, printing=False):
+    def calculate_rapidities_newton(self, printing=False, enable_damping=False):
         """Calculate the rapidities using a multidimensional Newton method."""
-        # TODO: Implement relaxation as done by Caux.
-        for no_of_iterations in range(20):
+        damping = 1
+        diff_sq_prev = np.inf
+        diff_square = 100
+        no_of_iterations = 0
+        while no_of_iterations < 20 and diff_square > 10**-27:
             rhs_bethe_equations = np.zeros(self.N)
             for j in range(self.N):
                 for k in range(self.N):
@@ -59,13 +62,21 @@ class lieb_liniger_state:
                 diff_square += delta_lambda[i]**2 / (self.lambdas[i]**2 + 10**-6)
             diff_square /= self.N
             if printing:
-                print(diff_square)
+                print(f"{diff_square:.20}")
 
             for i in range(self.N):
-                self.lambdas[i] += delta_lambda[i]
+                if enable_damping:
+                    self.lambdas[i] += damping * delta_lambda[i]
+                else:
+                    self.lambdas[i] += delta_lambda[i]
 
-            if diff_square < 10**-14:
-                return no_of_iterations
+            if diff_square > diff_sq_prev and damping > 0.5:
+                damping /= 2
+            elif diff_sq_prev < diff_sq_prev:
+                damping = 1
+            diff_sq_prev = diff_square
+            
+            no_of_iterations += 1
 
         return no_of_iterations
 
@@ -96,7 +107,7 @@ class lieb_liniger_state:
         self.calculate_norm()
 
 
-def generate_bethe_numbers(N, ref_state=[], max_I=np.inf):
+def generate_bethe_numbers(N, ref_state=[], max_I=10.**6):
     """Generate Bethe numbers for excited states."""
     bethe_numbers = np.full(N, 10.**7, dtype=np.float)
     no_of_unique_entries = 0
@@ -115,8 +126,8 @@ def generate_bethe_numbers(N, ref_state=[], max_I=np.inf):
             no_of_unique_entries += 1
 
     # Make sure we do not generate the reference state.
-    if list(np.sort(bethe_numbers)) == ref_state:
-        return generate_bethe_numbers(N, ref_state)
+    if list(np.sort(bethe_numbers)) == list(ref_state):
+        return generate_bethe_numbers(N, ref_state, max_I)
     else:
         return np.sort(bethe_numbers)
 
