@@ -11,10 +11,10 @@ import lieb_liniger_state as lls
 
 def neural_net(no_of_particles):
     model = Sequential()
-    model.add(Dense(units=no_of_particles, activation='tanh', kernel_initializer='lecun_uniform', input_dim=no_of_particles))
-    model.add(Dense(units=int(no_of_particles**2), kernel_initializer='lecun_uniform', activation='tanh'))
+    model.add(Dense(units=no_of_particles, kernel_initializer='lecun_uniform', activation='tanh', input_dim=no_of_particles))
+    # model.add(Dense(units=int(no_of_particles**2), kernel_initializer='lecun_uniform', activation='tanh'))
     model.add(Dense(units=int(no_of_particles**3), kernel_initializer='lecun_uniform', activation='tanh'))
-    model.add(Dense(units=int(no_of_particles**2), kernel_initializer='lecun_uniform', activation='tanh'))
+    # model.add(Dense(units=int(no_of_particles**2), kernel_initializer='lecun_uniform', activation='tanh'))
     model.add(Dense(units=no_of_particles, kernel_initializer='lecun_uniform'))
     model.compile(loss='mse', optimizer=RMSprop())
     model.summary()
