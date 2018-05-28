@@ -1,68 +1,49 @@
 """Predict rapidities given a set of Bethe numbers."""
 
-import tensorflow as tf
 import numpy as np
+
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.optimizers import RMSprop
 
 import lieb_liniger_state as lls
 
-no_of_particles = 10
 
-# Define placeholders to feed mini_batches
-X = tf.placeholder(tf.float32, shape=[None, no_of_particles], name='X')
-y_ = tf.placeholder(tf.float32, shape=[None, no_of_particles], name='y')
-
-# Find values for W that compute y_data = <x, W>
-W = tf.Variable(tf.random_uniform([no_of_particles, no_of_particles], -1.0, 1.0))
-b = tf.Variable(np.random.randn(), name="bias")
-y = tf.add(tf.matmul(X, W, name='y_pred'), b)
-
-# Minimize the mean squared errors.
-loss = tf.reduce_mean(tf.square(y_ - y))
-optimizer = tf.train.GradientDescentOptimizer(0.01)
-train = optimizer.minimize(loss)
-
-sess = tf.InteractiveSession()
-tf.global_variables_initializer().run()
-
-file_writer = tf.summary.FileWriter('./', sess.graph)
+def neural_net(no_of_particles):
+    model = Sequential()
+    model.add(Dense(units=no_of_particles, activation='tanh', kernel_initializer='lecun_uniform', input_dim=no_of_particles))
+    model.add(Dense(units=int(no_of_particles**2), kernel_initializer='lecun_uniform', activation='tanh'))
+    model.add(Dense(units=int(no_of_particles**3), kernel_initializer='lecun_uniform', activation='tanh'))
+    model.add(Dense(units=int(no_of_particles**2), kernel_initializer='lecun_uniform', activation='tanh'))
+    model.add(Dense(units=no_of_particles, kernel_initializer='lecun_uniform'))
+    model.compile(loss='mse', optimizer=RMSprop())
+    model.summary()
+    return model
 
 
-x_data = []
-y_data = []
+def main(no_of_particles, no_of_states):
+    ground_state = lls.lieb_liniger_state(1, no_of_particles, no_of_particles)
+    Is = np.zeros((no_of_states, no_of_particles))
+    lambdas = np.zeros((no_of_states, no_of_particles))
+    for i in range(no_of_states):
+        if i % 1000 == 0:
+            print(f"Generated {i}/{no_of_states} states")
+        bethe_numbers = lls.generate_bethe_numbers(no_of_particles, ground_state.Is)
+        llstate = lls.lieb_liniger_state(1, 100, no_of_particles, bethe_numbers)
+        llstate.lambdas = 2 * np.pi / llstate.L * llstate.Is
+        no_of_iterations = llstate.calculate_rapidities_newton()
+        Is[i] = bethe_numbers
+        lambdas[i] = llstate.lambdas
 
-for i in range(256):
-    if i % 20 == 0:
-        print(i)
-    bethe_numbers = lls.generate_bethe_numbers(no_of_particles, [])
-    llstate = lls.lieb_liniger_state(1, 100, no_of_particles, bethe_numbers)
-    llstate.lambdas = 2 * np.pi / llstate.L * llstate.Is
+    model = neural_net(no_of_particles)
 
-    llstate.calculate_rapidities_newton()
-    x_data.append(llstate.Is)
-    y_data.append(llstate.lambdas)
+    history = model.fit(x=Is, y=lambdas, epochs=100, verbose=2, validation_split=0.2)
+    print(history.history["val_loss"])
 
-steps = []
-errors = []
-for step in range(20001):
-    sess.run(train, feed_dict={X: x_data[step:step+256], y_: y_data[step:step+256]})
+    print(model.predict(Is[0].reshape(1, -1)))
+    print(Is[0])
+    print(lambdas[0])
 
-    bethe_numbers = lls.generate_bethe_numbers(no_of_particles, [])
-    llstate = lls.lieb_liniger_state(1, 100, no_of_particles, bethe_numbers)
-    llstate.lambdas = 2 * np.pi / llstate.L * llstate.Is
 
-    no_of_iterations = llstate.calculate_rapidities_newton()
-    x_data.append(llstate.Is)
-    y_data.append(llstate.lambdas)
-    if step % 200 == 0:
-        print("step", step)
-        print("no of iterations with naive guess", no_of_iterations)
-        classification = sess.run(tf.transpose(y), feed_dict={X: (llstate.Is).reshape(1, no_of_particles)})
-        error = np.sum((llstate.lambdas - classification.T.flatten())**2) / no_of_particles
-        print("error =", error)
-        print("prediction:\n", classification.T.flatten())
-        print("exact:\n", llstate.lambdas)
-
-        llstate.lambdas = classification
-        print("no of iterations with ML guess", llstate.calculate_rapidities_newton(True), "\n")
-        steps.append(step)
-        errors.append(error)
+if __name__ == "__main__":
+    main(no_of_particles=10, no_of_states=20000)
