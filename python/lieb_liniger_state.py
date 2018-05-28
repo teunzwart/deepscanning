@@ -15,8 +15,8 @@ class lieb_liniger_state:
             self.Is = bethe_numbers
         else:
             self.Is = self.generate_gs_bethe_numbers()
-        self.lambdas = np.zeros(N)
-        self.gaudin_matrix = np.zeros((self.N, self.N))
+        self.lambdas = np.ones(N)
+        self.gaudin_matrix = np.ones((self.N, self.N))
 
     def generate_gs_bethe_numbers(self):
         """Generate ground state Bethe numbers for the Lieb-Linger model."""
@@ -55,6 +55,7 @@ class lieb_liniger_state:
                 rhs_bethe_equations[j] += self.L * self.lambdas[j] - 2 * np.pi * self.Is[j]
 
             self.calculate_gaudin_matrix()
+            # print("\n", self.gaudin_matrix)
             delta_lambda = np.linalg.solve(self.gaudin_matrix, -rhs_bethe_equations)
 
             diff_square = 0
@@ -62,7 +63,7 @@ class lieb_liniger_state:
                 diff_square += delta_lambda[i]**2 / (self.lambdas[i]**2 + 10**-6)
             diff_square /= self.N
             if printing:
-                print(f"{diff_square:.20}")
+                print(f"{diff_square:.20}, {self.lambdas}")
 
             for i in range(self.N):
                 if enable_damping:
@@ -72,7 +73,7 @@ class lieb_liniger_state:
 
             if diff_square > diff_sq_prev and damping > 0.5:
                 damping /= 2
-            elif diff_sq_prev < diff_sq_prev:
+            elif diff_square < diff_sq_prev:
                 damping = 1
             diff_sq_prev = diff_square
             
