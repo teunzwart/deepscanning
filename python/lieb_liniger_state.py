@@ -22,15 +22,14 @@ class lieb_liniger_state:
         """Generate ground state Bethe numbers for the Lieb-Linger model."""
         if self.N % 2 == 0:
             return -0.5 - self.N/2 + np.linspace(1, self.N, self.N)
-        else:
-            return np.linspace(-(self.N-1)/2, (self.N-1)/2, self.N)
+        return np.linspace(-(self.N-1)/2, (self.N-1)/2, self.N)
 
     @staticmethod
     def kernel(k, c):
         return 2 * c / (c**2 + k**2)
 
     def calculate_gaudin_matrix(self):
-        # """Calculate the Gaudin matrix."""
+        """Calculate the Gaudin matrix."""
         for j in range(self.N):
             for k in range(self.N):
                 if j == k:
