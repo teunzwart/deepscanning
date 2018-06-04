@@ -1,24 +1,14 @@
 import pickle
 import copy
-import sys
 
-import tree_search
 import lieb_liniger_state as lls
 import sum_rule
 
-import psi_form_factor as pff
+import rho_form_factor as pff
 
 import numpy as np
-import pandas
-import keras
 from keras.models import Sequential
 from keras.layers import Dense
-from keras.wrappers.scikit_learn import KerasClassifier
-from keras.utils import np_utils
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import KFold
-from sklearn.preprocessing import LabelEncoder
-from sklearn.pipeline import Pipeline
 
 # define baseline model
 def baseline_model(N):
@@ -36,9 +26,11 @@ def baseline_model(N):
 def get_allowed_prediction(probs, state):
     """Only give non-zero probabilities to allowed transitions."""
     for i, k in enumerate(state):
+        # Mask removals from unoccupied sites.
         if k == 0:
             for z in range(len(state)):
                 probs[i][z] = 0
+        # Mask additions to occupied sites.
         if k == 1:
             for z in range(len(state)):
                 probs[z][i] = 0
@@ -62,28 +54,6 @@ def mutate(model, state, history):
         # print(new_state)
         if list(new_state) not in history:
             return new_state
-
-
-def map_to_entire_space(bethe_numbers, max_I):
-    """Map to an interval [-max_I, max_I]."""
-    # TODO: Fix this.
-    if len(bethe_numbers) % 2 == 0:
-        sys.exit("Can't handle even state mapping.")
-    transformed_bethe_numbers = np.array(bethe_numbers, dtype=np.int) + max_I
-    entire_space = np.zeros(2 * max_I + 1)
-    for i, _ in enumerate(entire_space):
-        if i in transformed_bethe_numbers:
-            entire_space[i] = 1
-    return entire_space
-
-
-def map_to_bethe_numbers(entire_space, max_I):
-    bethe_numbers = []
-    for i, k in enumerate(entire_space):
-        if k == 1:
-            bethe_numbers.append(i)
-    # print(bethe_numbers)
-    return np.array(bethe_numbers) - max_I
 
 
 if __name__ == "__main__":
@@ -112,8 +82,8 @@ if __name__ == "__main__":
     rstate = lls.lieb_liniger_state(1, 5, 5)
     rstate.calculate_all()
     current_state = map_to_entire_space(copy.copy(rstate.Is), 20)
-    for k in range(100):
-        # print("k", k)
+    for t in range(400):
+        print("t", t)
         # print(current_state)
         new_state = mutate(model, current_state, already_explored)
         # print("new_state", new_state)
@@ -131,5 +101,6 @@ if __name__ == "__main__":
         current_state = new_state
 
     print("sumrule", sum_rule.compute_average_sumrule(dsf_data, rstate.energy, 5, 5))
-
-    print([map_to_bethe_numbers(k, 20) for k in already_explored])
+    for z in dsf_data:
+        print(z, len(data[z]))
+    # print([map_to_bethe_numbers(k, 20) for k in already_explored])
