@@ -70,16 +70,21 @@ def no_of_particle_hole_pairs(state, reference_state, N):
 
 
 def select_action(available_actions, state, previously_visited_states, max_I, N_world, N, check_no_of_pairs=True):
-    allowed_no_of_ph_pairs = 1
-    while True:
-        for action in available_actions:
-            if is_valid_action(state, action, N_world):
-                new_state = change_state(state, action)
-                if (list(new_state) not in previously_visited_states) and (abs(sum(map_to_bethe_numbers(new_state, max_I))) <= max_I):
-                    if check_no_of_pairs and(no_of_particle_hole_pairs(new_state, previously_visited_states[0], N) == allowed_no_of_ph_pairs):
+    no_of_ph_per_action = []
+
+    for action in available_actions:
+        if is_valid_action(state, action, N_world):
+            new_state = change_state(state, action)
+            if (list(new_state) not in previously_visited_states) and (abs(sum(map_to_bethe_numbers(new_state, max_I))) <= max_I):
+                if check_no_of_pairs:
+                    no_of_pairs = no_of_particle_hole_pairs(new_state, previously_visited_states[0], N)
+                    if no_of_pairs == 1:
                         return new_state, action
-                    elif check_no_of_pairs:
-                        continue
                     else:
-                        return new_state, action
-        allowed_no_of_ph_pairs += 1
+                        no_of_ph_per_action.append((no_of_pairs, (new_state, action)))
+                elif check_no_of_pairs:
+                    continue
+                else:
+                    return new_state, action
+
+    return sorted(no_of_ph_per_action, key=lambda x: x[0])[0][1]
