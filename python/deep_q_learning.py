@@ -12,14 +12,14 @@ from scipy.misc import comb
 import lieb_liniger_state as lls
 import rho_form_factor as rff
 from sum_rule import compute_average_sumrule, left_side, right_side
-from utils import map_to_entire_space, map_to_bethe_numbers, get_valid_random_action, get_largest_allowed_Q_value, change_state, no_of_particle_hole_pairs, get_allowed_indices, select_action
+from utils import map_to_entire_space, map_to_bethe_numbers, get_allowed_indices, select_action
 
 
 def neural_net(N_world):
     model = Sequential()
-    model.add(Dense(units=N_world, activation='relu', kernel_initializer='lecun_uniform', input_dim=N_world))
-    model.add(Dense(units=int(N_world**1.5), kernel_initializer='lecun_uniform', activation='softmax'))
-    model.add(Dense(units=N_world**2, kernel_initializer='lecun_uniform', activation='relu'))
+    model.add(Dense(units=N_world, activation='tanh', kernel_initializer='lecun_uniform', input_dim=N_world))
+    model.add(Dense(units=int(N_world**1.5), kernel_initializer='lecun_uniform', activation='tanh'))
+    model.add(Dense(units=N_world**2, kernel_initializer='lecun_uniform', activation='tanh'))
     model.compile(loss='mse', optimizer=RMSprop())
     model.summary()
     return model
@@ -123,7 +123,7 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
         previously_visited_states.append(list(state))
         for n in range(1, no_of_steps + 1):
             Q = model.predict(state.reshape(1, -1), batch_size=1)
-            new_state, action = epsilon_greedy(Q, state, previously_visited_states, epsilon, I_max, N_world, N)
+            new_state, action = epsilon_greedy(Q, state, previously_visited_states, epsilon, I_max, N_world, N, check_no_of_pairs=True)
             previously_visited_states.append(list(new_state))
 
             new_lstate = lls.lieb_liniger_state(1, L, N, map_to_bethe_numbers(new_state, I_max))
@@ -135,11 +135,11 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
             else:
                 dsf_data[new_lstate.integer_momentum] = [new_lstate]
 
-            # reward = get_reward_for_large_formfactors(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
-            reward = get_formfactor_reward(new_lstate, rstate)
+            reward = get_reward_for_large_formfactors(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
+            # reward = get_formfactor_reward(new_lstate, rstate)
 
             new_Q = model.predict(new_state.reshape(1, -1), batch_size=1)
-            _, new_action = select_action(list(zip(*np.unravel_index(new_Q[0].argsort(), (N_world, N_world)))), state, previously_visited_states, I_max, N_world, N, check_no_of_pairs=True)
+            _, new_action = select_action(list(zip(*np.unravel_index(new_Q[0].argsort(), (N_world, N_world)))), state, previously_visited_states, I_max, N_world, N, check_no_of_pairs=False)
             # print(new_action)
             new_best_action = np.ravel_multi_index(new_action, (N_world, N_world))
             new_max_Q = new_Q[0][new_best_action]
