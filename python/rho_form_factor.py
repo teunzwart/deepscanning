@@ -70,12 +70,13 @@ if __name__ == "__main__":
         lstate = lls.lieb_liniger_state(1, N, N, bethe_numbers)
         lstate.calculate_all()
         ff = calculate_normalized_form_factor(lstate, rstate)
-        try:
-            data.append({"I": lstate.Is, "ff": np.abs(np.log(np.real(ff**2)))})
-        except FloatingPointError:
-            print(np.real(ff**2))
+        print(ff)
+        # try:
+        #     data.append({"I": lstate.Is, "ff": np.abs(np.log(np.real(ff**2)))})
+        # except FloatingPointError:
+        #     print(np.real(ff**2))
 
-    pickle.dump(data, open("data.p", "wb+"))
+    # pickle.dump(data, open("data.p", "wb+"))
 
 
 
