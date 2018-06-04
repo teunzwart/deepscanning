@@ -9,9 +9,9 @@ import lieb_liniger_state as lls
 
 import psi_form_factor as pff
 
-L = 10
-N = 11
-I_max = 100
+L = 3
+N = 3
+I_max = 5
 
 def all_unique(state):
     """Check if all entries of a state are unique."""
@@ -92,25 +92,12 @@ def find_lowest_energy_delta(base, edges):
     return edges[index], lowest_energy_diff
 
 
-def map_to_entire_space(bethe_numbers, max_I):
-    """Map to an interval [-max_I, max_I]."""
-    # TODO: Fix this.
-    if len(bethe_numbers) % 2 == 0:
-        sys.exit("Can't handle even state mapping.")
-    transformed_bethe_numbers = np.array(bethe_numbers, dtype=np.int) + max_I
-    entire_space = np.zeros(2 * max_I + 1)
-    for i, _ in enumerate(entire_space):
-        if i in transformed_bethe_numbers:
-            entire_space[i] = 1
-    return entire_space
-    
-    
 if __name__ == "__main__":
     # state = lls.lieb_liniger_state(1, L, 10)
     # descent_tree(list(state.Is), 1)
     added_data = []
     removed_data = []
-    
+
     for k in range(10000):
         if k % 100 == 0:
             print(k)
