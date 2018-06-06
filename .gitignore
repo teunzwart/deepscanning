@@ -1,6 +1,5 @@
 .DS_Store
-build/
 __pycache__/
 *.pickle    
-Makefile
 .ipynb_checkpoints/
+*.o
