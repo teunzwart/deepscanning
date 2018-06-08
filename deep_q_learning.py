@@ -17,7 +17,7 @@ from utils import map_to_entire_space, map_to_bethe_numbers, get_allowed_indices
 
 def neural_net(N_world):
     model = Sequential()
-    model.add(Dense(units=N_world, activation='tanh', kernel_initializer='lecun_uniform', input_dim=N_world))
+    model.add(Dense(units=int(N_world**1.5), kernel_initializer='lecun_uniform', activation='tanh', input_dim=N_world))
     model.add(Dense(units=int(N_world**1.5), kernel_initializer='lecun_uniform', activation='tanh'))
     model.add(Dense(units=N_world**2, kernel_initializer='lecun_uniform', activation='tanh'))
     model.compile(loss='mse', optimizer=RMSprop())
@@ -34,7 +34,7 @@ def neural_net(N_world):
 
 
 def get_formfactor_reward(lstate, rstate):
-    return (lstate.energy - rstate.energy) * np.abs(rff.calculate_normalized_form_factor(lstate, rstate))**2
+    return (lstate.energy - rstate.energy) * np.abs(rff.rho_form_factor(lstate, rstate))**2
 
 
 def get_reward_for_large_formfactors(ff, lstate, rstate, N_world):
@@ -106,7 +106,7 @@ def epsilon_greedy(qval, state, previously_visited, epsilon, max_I, N_world, N, 
         return select_action(list(zip(*np.unravel_index(qval[0].argsort(), (N_world, N_world)))), state, previously_visited, max_I, N_world, N, check_no_of_pairs)
 
 
-def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1, no_of_steps=100, model=None, best_dsf=None):
+def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1, no_of_steps=100, model=None, best_dsf=None, check_no_of_pairs=False):
     # Allow for further training of a given model.
     if not model:
         model = neural_net(N_world)
@@ -123,12 +123,12 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
         previously_visited_states.append(list(state))
         for n in range(1, no_of_steps + 1):
             Q = model.predict(state.reshape(1, -1), batch_size=1)
-            new_state, action = epsilon_greedy(Q, state, previously_visited_states, epsilon, I_max, N_world, N, check_no_of_pairs=True)
+            new_state, action = epsilon_greedy(Q, state, previously_visited_states, epsilon, I_max, N_world, N, check_no_of_pairs=check_no_of_pairs)
             previously_visited_states.append(list(new_state))
 
             new_lstate = lls.lieb_liniger_state(1, L, N, map_to_bethe_numbers(new_state, I_max))
             new_lstate.calculate_all()
-            new_lstate.ff = rff.calculate_normalized_form_factor(new_lstate, rstate)
+            new_lstate.ff = rff.rho_form_factor(new_lstate, rstate)
 
             if new_lstate.integer_momentum in dsf_data.keys():
                 dsf_data[new_lstate.integer_momentum].append(new_lstate)
@@ -173,8 +173,3 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
         best_sums.append(highest_achieved_sumrule)
 
     return model, best_dsf, sums, best_sums
-
-
-if __name__ == "__main__":
-    # N_world = 2 * I_max + 1
-    q_learning(41, 20, 9, 9)

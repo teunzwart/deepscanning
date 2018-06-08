@@ -9,7 +9,7 @@ import rho_form_factor as rff
 from sum_rule import compute_average_sumrule
 
 
-def dsf_scan(model, N_world, I_max, L, N, max_no_of_steps=10000, prefered_sumrule_saturation=0.9, is_random=False):
+def dsf_scan(model, N_world, I_max, L, N, max_no_of_steps=10000, prefered_sumrule_saturation=0.9, is_random=False, check_no_of_pairs=False):
     rstate = lls.lieb_liniger_state(1, L, N)
     rstate.calculate_all()
     print(f"Size of search space is Choose[N_world, N]={comb(N_world, N):.3e}")
@@ -25,16 +25,13 @@ def dsf_scan(model, N_world, I_max, L, N, max_no_of_steps=10000, prefered_sumrul
         epsilon = 0.1
     for n in range(1, max_no_of_steps + 1):
         Q = model.predict(state.reshape(1, -1), batch_size=1)
-        new_state, action = epsilon_greedy(Q, state, previously_visited_states, epsilon, I_max, N_world, N, check_no_of_pairs=False)
+        new_state, action = epsilon_greedy(Q, state, previously_visited_states, epsilon, I_max, N_world, N, check_no_of_pairs=check_no_of_pairs)
         previously_visited_states.append(list(new_state))
-        # print(new_state)
 
         new_lstate = lls.lieb_liniger_state(1, N, L, map_to_bethe_numbers(new_state, I_max))
         new_lstate.calculate_all()
-        new_lstate.ff = rff.calculate_normalized_form_factor(new_lstate, rstate)
+        new_lstate.ff = rff.rho_form_factor(new_lstate, rstate)
         form_factors.append(new_lstate.ff)
-        # print(abs(new_lstate.ff))
-        # print(new_lstate.Is)
 
         if new_lstate.integer_momentum in dsf_data.keys():
             dsf_data[new_lstate.integer_momentum].append(new_lstate)
@@ -47,8 +44,6 @@ def dsf_scan(model, N_world, I_max, L, N, max_no_of_steps=10000, prefered_sumrul
         saturation_history.append(sum_rule_saturation)
 
         sys.stdout.write(f"n={n:{len(str(max_no_of_steps))}}, current sumrule: {sum_rule_saturation:.10f} \r")
-        # sys.stdout.flush()
-        # print(f"n={n:{len(str(max_no_of_steps))}}, current sumrule: {sum_rule_saturation:.10f} \r")
 
         if sum_rule_saturation > prefered_sumrule_saturation:
             return dsf_data, saturation_history, form_factors

@@ -32,32 +32,3 @@ def compute_average_sumrule(data, ref_energy, L, N, max_I, N_world, print_all=Fa
                 print(f"{i:3}: {left_side(states, ref_energy) / right_side(i, L, N):.20f}")
             sumrule += left_side(states, ref_energy) / right_side(i, L, N)
     return sumrule / (N_world - 1)
-
-
-if __name__ == "__main__":
-    import rho_form_factor as rff
-    import copy
-    import lieb_liniger_state as lls
-
-    L = N = 9
-    data = {}
-    rstate = lls.lieb_liniger_state(1, L, N)
-    rstate.calculate_all()
-    bethe_numbers = copy.copy(rstate.Is)
-    for k in range(1000):
-        # bethe_numbers = lls.generate_bethe_numbers(N, list(rstate.Is))
-        bethe_numbers[-1] += 1
-        lstate = lls.lieb_liniger_state(1, L, N, bethe_numbers)
-        lstate.calculate_all()
-        lstate.ff = rff.calculate_normalized_form_factor(lstate, rstate)
-        integer_momentum = lstate.integer_momentum
-        if integer_momentum in data:
-            data[integer_momentum].append(lstate)
-        else:
-            data[integer_momentum] = [lstate]
-
-    # for k in sorted(data):
-    #     left_side_value = left_side(data[k], rstate.energy)
-    #     right_side_value = right_side(k, N, N)
-    #     print(k, left_side_value / right_side_value, "\n")
-    print(compute_average_sumrule(data, rstate.energy, N, N, print_all=True))

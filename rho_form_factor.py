@@ -11,7 +11,7 @@ import lieb_liniger_state as lls
 kernel = lls.lieb_liniger_state.kernel
 
 
-def rho_form_factor(mu, lambda_):
+def rho_form_factor_unnormalized(mu, lambda_):
     if list(mu.Is) == list(lambda_.Is):
         return mu.N / mu. L
     elif mu.integer_momentum == lambda_.integer_momentum:
@@ -55,57 +55,7 @@ def construct_U(mu, lambda_):
     return U
 
 
-def calculate_normalized_form_factor(mu, lambda_):
-    unnormalized_ff = rho_form_factor(mu, lambda_)
+def rho_form_factor(mu, lambda_):
+    unnormalized_ff = rho_form_factor_unnormalized(mu, lambda_)
     return unnormalized_ff / np.sqrt(mu.norm * lambda_.norm)
 
-
-if __name__ == "__main__":
-    N = 10
-    data = []
-    rstate = lls.lieb_liniger_state(1, N, N)
-    rstate.calculate_all()
-    for k in range(10000):
-        bethe_numbers = lls.generate_bethe_numbers(N, list(rstate.Is))
-        lstate = lls.lieb_liniger_state(1, N, N, bethe_numbers)
-        lstate.calculate_all()
-        ff = calculate_normalized_form_factor(lstate, rstate)
-        print(ff)
-        # try:
-        #     data.append({"I": lstate.Is, "ff": np.abs(np.log(np.real(ff**2)))})
-        # except FloatingPointError:
-        #     print(np.real(ff**2))
-
-    # pickle.dump(data, open("data.p", "wb+"))
-
-
-
-
-
-    
-    # rstate = lls.lieb_liniger_state(1, 10, 3)
-    # lstate = lls.lieb_liniger_state(1, 10, 3, [-6, 0, 6])
-    # rstate.calculate_all()
-    # lstate.calculate_all()
-    # print(lstate.norm)
-    # print(rstate.norm)
-
-    # print("<l|rho|r>", psi_form_factor(lstate, rstate))
-    # print(calculate_normalized_form_factor(lstate, rstate))
-    # print("<r|rho|l>", psi_form_factor(rstate, lstate))
-    # print(calculate_normalized_form_factor(rstate, lstate))
-
-    # print("\n")
-
-    # # Random states
-    # lstate = lls.lieb_liniger_state(1, 10, 10)
-    # rstate = lls.lieb_liniger_state(1, 10, 10, lls.generate_bethe_numbers(10))
-    # print(rstate.Is)
-    # lstate.calculate_all()
-    # rstate.calculate_all()
-
-    # print("<l|rho|r>", psi_form_factor(lstate, rstate))
-    # print(np.log(calculate_normalized_form_factor(lstate, rstate)))
-    # print("<r|rho|l>", psi_form_factor(rstate, lstate))
-    # print(calculate_normalized_form_factor(rstate, lstate))
-    # print(np.log(calculate_normalized_form_factor(rstate, lstate)))
