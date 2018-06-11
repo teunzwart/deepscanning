@@ -4,6 +4,9 @@ import seaborn as sns
 
 import sum_rule as sr
 
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif')
+
 def visualize_dsf(dsf_data, fermi_momentum):
     x_list = []
     y_list = []
@@ -14,28 +17,21 @@ def visualize_dsf(dsf_data, fermi_momentum):
                 x_list.append(k / fermi_momentum)
                 y_list.append(state.energy / fermi_momentum**2)
                 z_list.append(np.abs(state.ff)**2)
-                plt.scatter(x_list, y_list)
+
+    x = np.array(x_list)
+    y = np.array(y_list)
+    z = np.array(z_list)
+    f, ax = plt.subplots()
+
+    contourplot = ax.tricontourf(x, y, z, 15) 
+    for c in contourplot.collections:
+        c.set_edgecolor("face")
+    ax.set_xlim(0, 4)
+    ax.set_ylim(0, 15)
+    ax.set_xlabel(r"$k/k_F$")
+    ax.set_ylabel(r"$\omega/k_F^2$")
+    sns.despine()
     plt.show()
-    from scipy.interpolate import interp2d
-
-    # # f will be a function with two arguments (x and y coordinates),
-    # # but those can be array_like structures too, in which case the
-    # # result will be a matrix representing the values in the grid 
-    # # specified by those arguments
-    # f = interp2d(x_list,y_list,z_list,kind="linear")
-
-    # x_coords = np.arange(min(x_list),max(x_list)+1)
-    # y_coords = np.arange(min(y_list),max(y_list)+1)
-    # Z = f(x_coords,y_coords)
-    # print(Z)
-    
-    # fig = plt.imshow(Z,
-    #                  extent=[min(x_list),max(x_list),min(y_list),max(y_list)],
-    #                  origin="lower")
-
-    # # Show the positions of # TODO: he sample points, just to have some reference
-    # fig.axes.set_autoscale_on(False)
-    # plt.scatter(x_list,y_list,400,facecolors='none')
     
 
 def visualize_sum_rule_momentum_distribution(dsf_data, reference_state):
