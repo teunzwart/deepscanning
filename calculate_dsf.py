@@ -9,8 +9,8 @@ import rho_form_factor as rff
 from sum_rule import compute_average_sumrule
 
 
-def dsf_scan(model, N_world, I_max, L, N, max_no_of_steps=10000, prefered_sumrule_saturation=0.9, is_random=False, check_no_of_pairs=False):
-    rstate = lls.lieb_liniger_state(1, L, N)
+def dsf_scan(model, N_world, I_max, c, L, N, max_no_of_steps=10000, prefered_sumrule_saturation=0.9, is_random=False, check_no_of_pairs=False):
+    rstate = lls.lieb_liniger_state(c, L, N)
     rstate.calculate_all()
     print(f"Size of search space is Choose[N_world, N]={comb(N_world, N):.3e}")
     dsf_data = {}
@@ -28,7 +28,7 @@ def dsf_scan(model, N_world, I_max, L, N, max_no_of_steps=10000, prefered_sumrul
         new_state, action = epsilon_greedy(Q, state, previously_visited_states, epsilon, I_max, N_world, N, check_no_of_pairs=check_no_of_pairs)
         previously_visited_states.append(list(new_state))
 
-        new_lstate = lls.lieb_liniger_state(1, N, L, map_to_bethe_numbers(new_state, I_max))
+        new_lstate = lls.lieb_liniger_state(c, N, L, map_to_bethe_numbers(new_state, I_max))
         new_lstate.calculate_all()
         new_lstate.ff = rff.rho_form_factor(new_lstate, rstate)
         form_factors.append(new_lstate.ff)

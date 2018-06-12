@@ -46,18 +46,18 @@ def get_reward_for_large_formfactors(ff, lstate, rstate, N_world):
         return -1
 
 
-def get_reward_at_final_step(dsf_data, n, no_of_steps, L, N, I_max, N_world):
+def get_reward_at_final_step(dsf_data, n, no_of_steps, c, L, N, I_max, N_world):
     # Quite logical that this does not perform well since it puts all reward into single place, which means learning (if any) is very slow.
     if n == no_of_steps:
-        state = lls.lieb_liniger_state(1, L, N)
+        state = lls.lieb_liniger_state(c, L, N)
         state.calculate_all()
         return compute_average_sumrule(dsf_data, state.energy, L, N, I_max, N_world)
     else:
         return 0
 
 
-def get_partial_sumrule_reward_at_every_step(dsf_data, n, no_of_steps, L, N, lstate):
-    state = lls.lieb_liniger_state(1, L, N)
+def get_partial_sumrule_reward_at_every_step(dsf_data, n, no_of_steps, c, L, N, lstate):
+    state = lls.lieb_liniger_state(c, L, N)
     state.calculate_all()
     if lstate.integer_momentum != 0:
         return left_side(dsf_data[lstate.integer_momentum], state.energy) / right_side(lstate.integer_momentum, L, N)
@@ -65,8 +65,8 @@ def get_partial_sumrule_reward_at_every_step(dsf_data, n, no_of_steps, L, N, lst
         return 0
 
 
-def get_full_sumrule_reward_at_every_step(dsf_data, L, N, I_max, N_world):
-    state = lls.lieb_liniger_state(1, L, N)
+def get_full_sumrule_reward_at_every_step(dsf_data, c, L, N, I_max, N_world):
+    state = lls.lieb_liniger_state(c, L, N)
     state.calculate_all()
     return compute_average_sumrule(dsf_data, state.energy, L, N, I_max, N_world)
 
@@ -79,8 +79,8 @@ def get_reward_delta_sumrule(dsf_data, L, N, I_max, N_world, prev_sumrule):
     return get_full_sumrule_reward_at_every_step(dsf_data, L, N, I_max, N_world) - prev_sumrule
 
 
-def get_relative_reward_per_slice(dsf_data, L, N, I_max, N_world, k):
-    state = lls.lieb_liniger_state(1, L, N)
+def get_relative_reward_per_slice(dsf_data, c, L, N, I_max, N_world, k):
+    state = lls.lieb_liniger_state(c, L, N)
     state.calculate_all()
     if k != 0:
         return left_side(dsf_data[k], state.energy) / right_side(k, L, N) / len(dsf_data[k])
@@ -106,11 +106,11 @@ def epsilon_greedy(qval, state, previously_visited, epsilon, max_I, N_world, N, 
         return select_action(list(zip(*np.unravel_index(qval[0].argsort(), (N_world, N_world)))), state, previously_visited, max_I, N_world, N, check_no_of_pairs)
 
 
-def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1, no_of_steps=100, model=None, best_dsf=None, check_no_of_pairs=False):
+def q_learning(N_world, I_max, c, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1, no_of_steps=100, model=None, best_dsf=None, check_no_of_pairs=False):
     # Allow for further training of a given model.
     if not model:
         model = neural_net(N_world)
-    rstate = lls.lieb_liniger_state(1, L, N)
+    rstate = lls.lieb_liniger_state(c, L, N)
     rstate.calculate_all()
     highest_achieved_sumrule = 0
     sums = []
@@ -126,7 +126,7 @@ def q_learning(N_world, I_max, L, N, gamma=0.975, alpha=1, epochs=100, epsilon=1
             new_state, action = epsilon_greedy(Q, state, previously_visited_states, epsilon, I_max, N_world, N, check_no_of_pairs=check_no_of_pairs)
             previously_visited_states.append(list(new_state))
 
-            new_lstate = lls.lieb_liniger_state(1, L, N, map_to_bethe_numbers(new_state, I_max))
+            new_lstate = lls.lieb_liniger_state(c, L, N, map_to_bethe_numbers(new_state, I_max))
             new_lstate.calculate_all()
             new_lstate.ff = rff.rho_form_factor(new_lstate, rstate)
 
