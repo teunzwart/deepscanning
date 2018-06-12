@@ -39,16 +39,19 @@ def visualize_sum_rule_momentum_distribution(dsf_data, reference_state):
     for k, states in sorted(dsf_data.items()):
         if k > 0:
             sum_rule_value = sr.left_side(states, reference_state.energy) / sr.right_side(k, reference_state.N, reference_state.L)
-            print(sum_rule_value)
             data.append((k, sum_rule_value))
     plt.semilogy(np.array([d[0] for d in data]) / (2 * np.pi * np.max(reference_state.Is)/ reference_state.L), [d[1] for d in data] / (2 * np.pi * np.max(reference_state.Is)/ reference_state.L)**2)
     sns.despine()
     plt.show()
 
 
-def visualize_no_of_states_per_slice(dsf_data):
+def visualize_no_of_states_per_slice(dsf_data, save=True):
     plt.bar(sorted(dsf_data.keys()), [len(dsf_data[x]) for x in sorted(dsf_data.keys())])
+    plt.xlabel("Total momentum of state")
+    plt.ylabel("Number of states")
     sns.despine()
+    if save:
+        plt.savefig("no_of_states.pdf", bbox='tight')
     plt.show()
 
 
@@ -76,7 +79,7 @@ def visualize_sumrule_per_contributing_state(data, ref_energy, L, N, xlim, save=
 
     plt.bar(momenta, dsf_per_state, color="r")
     plt.xlabel("Integer momentum")
-    plt.ylabel("Sumrule saturation per state")
+    plt.ylabel("Mean sumrule saturation per state")
     plt.xlim(xlim)
     sns.despine()
     if save:
