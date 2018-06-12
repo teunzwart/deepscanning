@@ -30,5 +30,5 @@ def compute_average_sumrule(data, ref_energy, L, N, max_I, N_world, print_all=Fa
         if i != 0:
             if print_all:
                 print(f"{i:3}: {left_side(states, ref_energy) / right_side(i, L, N):.20f}")
-            sumrule += left_side(states, ref_energy) / right_side(i, L, N)
+            sumrule += (left_side(states, ref_energy) / right_side(i, L, N))
     return sumrule / (N_world - 1)

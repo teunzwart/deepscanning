@@ -11,7 +11,7 @@ import lieb_liniger_state as lls
 kernel = lls.lieb_liniger_state.kernel
 
 
-def rho_form_factor_unnormalized(mu, lambda_):
+def rho_form_factor_unnormalized(mu, lambda_):    
     if list(mu.Is) == list(lambda_.Is):
         return mu.N / mu. L
     elif mu.integer_momentum == lambda_.integer_momentum:
