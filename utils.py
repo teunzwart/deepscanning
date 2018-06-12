@@ -82,8 +82,7 @@ def select_action(available_actions, state, previously_visited_states, max_I, N_
                         return new_state, action
                     else:
                         no_of_ph_per_action.append((no_of_pairs, (new_state, action)))
-                elif check_no_of_pairs:
-                    continue
+                        continue
                 else:
                     return new_state, action
 
