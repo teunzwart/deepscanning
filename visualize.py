@@ -86,11 +86,25 @@ def visualize_sumrule_per_contributing_state(data, ref_energy, L, N, xlim, save=
         plt.savefig("saturations_over_states.pdf", bbox='tight')
     plt.show()
 
-def visualize_form_factor_sizes(form_factors, include_ordered=True):
-    plt.semilogy(np.abs(form_factors), 'ro', markersize=1)
+def visualize_form_factor_sizes(form_factors, include_ordered=True, include_trend=True, save=True, name=""):
+    """Input should be in 'raw' form, i.e. the complex form factors. ABACUS outputs real(FF)^2."""
+    plt.semilogy(np.abs(form_factors)**2, 'ro', markersize=1)
     if include_ordered:
-        plt.semilogy(sorted(np.abs(form_factors))[::-1])
+        plt.semilogy(sorted(np.abs(form_factors)**2)[::-1], label="Ordered form factors")
+    if include_trend:
+        with np.errstate(divide='ignore'):
+            abs_ff = np.log(np.abs(form_factors)**2)
+            indices = np.where(np.isfinite(abs_ff))
+            polynomial = np.polyfit(indices[0], abs_ff[indices], 1)
+            p = np.poly1d(polynomial)
+            print(np.exp(p(int(len(form_factors)/2))))
+            plt.semilogy(np.exp(p(range(len(form_factors)))), label="Trend line", color="black")
     sns.despine()
+    plt.legend()
+    plt.xlabel("Order in computation")
+    plt.ylabel("Square form factor")
+    if save:
+        plt.savefig(f"{name}.pdf")
     plt.show()
 
 
