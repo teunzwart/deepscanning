@@ -86,7 +86,7 @@ def visualize_sumrule_per_contributing_state(data, ref_energy, L, N, xlim, save=
         plt.savefig("saturations_over_states.pdf", bbox='tight')
     plt.show()
 
-def visualize_form_factor_sizes(form_factors, include_ordered=True, include_trend=True, save=True, name=""):
+def visualize_form_factor_sizes(form_factors, include_ordered=True, include_trend=True, save=True, name="ffsizes"):
     """Input should be in 'raw' form, i.e. the complex form factors. ABACUS outputs real(FF)^2."""
     plt.semilogy(np.abs(form_factors)**2, 'ro', markersize=1)
     if include_ordered:
