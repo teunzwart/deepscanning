@@ -47,7 +47,7 @@ def visualize_sum_rule_momentum_distribution(dsf_data, reference_state):
 
 def visualize_no_of_states_per_slice(dsf_data, save=True):
     plt.bar(sorted(dsf_data.keys()), [len(dsf_data[x]) for x in sorted(dsf_data.keys())])
-    plt.xlabel("Total momentum of state")
+    plt.xlabel("Total state momentum")
     plt.ylabel("Number of states")
     sns.despine()
     if save:
@@ -70,18 +70,20 @@ def visualize_sumrule_per_contributing_state(data, ref_energy, L, N, xlim, save=
 
     plt.bar(momenta, dsf_per_slice, color="b")
     plt.xlabel("Integer momentum")
-    plt.ylabel("Sumrule saturation")
+    plt.ylabel("Sum rule saturation")
     plt.xlim(xlim)
     sns.despine()
+    plt.tight_layout()
     if save:
         plt.savefig("saturations_over_momenta.pdf", bbox='tight')
     plt.show()
 
     plt.bar(momenta, dsf_per_state, color="r")
     plt.xlabel("Integer momentum")
-    plt.ylabel("Mean sumrule saturation per state")
+    plt.ylabel("Mean sum rule saturation per state")
     plt.xlim(xlim)
     sns.despine()
+    plt.tight_layout()
     if save:
         plt.savefig("saturations_over_states.pdf", bbox='tight')
     plt.show()
