@@ -99,10 +99,11 @@ def visualize_form_factor_sizes(form_factors, include_ordered=True, include_tren
             indices = np.where(np.isfinite(abs_ff))
             polynomial = np.polyfit(indices[0], abs_ff[indices], 1)
             p = np.poly1d(polynomial)
-            print(np.exp(p(int(len(form_factors)/2))))
+            print("mid", np.exp(p(int(len(form_factors)/2))), "coeff", np.exp(polynomial[1]))
             plt.semilogy(np.exp(p(range(len(form_factors)))), label="Trend line", color="black")
     sns.despine()
     plt.legend()
+    plt.xlim(xmin=0)
     plt.xlabel("Order in computation")
     plt.ylabel("Square form factor")
     if save:
