@@ -110,8 +110,10 @@ def visualize_form_factor_sizes(form_factors, include_ordered=True, include_tren
         plt.savefig(f"{name}.pdf")
     plt.show()
 
+    return np.exp(p(int(len(form_factors)/2))), np.exp(polynomial[1])
 
-def visualize_q_function(q_matrix, overlay=None):
+
+def visualize_q_function(q_matrix, overlay=None, save=True):
     fig, ax = plt.subplots()
     ax.imshow(q_matrix)
     try:
@@ -120,13 +122,15 @@ def visualize_q_function(q_matrix, overlay=None):
         pass
     ax.set_xlabel("Location to place particle")
     ax.set_ylabel("Location to remove particle from")
-    fig.savefig("q_function.pdf", bbox_inches='tight')
+    if save:
+        fig.savefig("q_function.pdf", bbox_inches='tight')
     plt.show()
 
-def visualize_state(state):
+def visualize_state(state, save=True):
     plt.imshow(np.vstack((state, state)))
     plt.yticks([])
-    plt.savefig("state.pdf", bbox_inches='tight')
+    if save:
+        plt.savefig("state.pdf", bbox_inches='tight')
     plt.show()
 
 def generate_overlay(prediction, overlay_type, number, N_world):
@@ -151,4 +155,13 @@ def generate_overlay(prediction, overlay_type, number, N_world):
 
     return overlay
 
-
+def visualize_saturation_history(saturations, save=False):
+    for hist in saturations:
+        plt.plot(hist)
+    sns.despine()
+    plt.xlim(xmin=0)
+    plt.xlabel("Order in computation")
+    plt.ylabel("Total sum rule saturation")
+    if save:
+        plt.savefig("saturation_history.pdf")
+    plt.show()

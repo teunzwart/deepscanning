@@ -24,7 +24,10 @@ def dsf_scan(model, N_world, I_max, c, L, N, max_no_of_steps=10000, prefered_sum
     else:
         epsilon = 0.1
     for n in range(1, max_no_of_steps + 1):
-        Q = model.predict(state.reshape(1, -1), batch_size=1)
+        if model:
+            Q = model.predict(state.reshape(1, -1), batch_size=1)
+        else:
+            Q = 0
         new_state, action = epsilon_greedy(Q, state, previously_visited_states, epsilon, I_max, N_world, N, check_no_of_pairs=check_no_of_pairs)
         previously_visited_states.append(list(new_state))
 
@@ -46,6 +49,6 @@ def dsf_scan(model, N_world, I_max, c, L, N, max_no_of_steps=10000, prefered_sum
         sys.stdout.write(f"n={n:{len(str(max_no_of_steps))}}, current sumrule: {sum_rule_saturation:.10f} \r")
 
         if sum_rule_saturation > prefered_sumrule_saturation:
-            return dsf_data, saturation_history, form_factors
+            return dsf_data, saturation_history, form_factors, n
 
-    return dsf_data, saturation_history, form_factors
+    return dsf_data, saturation_history, form_factors, n

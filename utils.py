@@ -87,3 +87,9 @@ def select_action(available_actions, state, previously_visited_states, max_I, N_
                     return new_state, action
 
     return sorted(no_of_ph_per_action, key=lambda x: x[0])[0][1]
+
+
+def measure_with_error(data, method):
+    measure = f"{data.mean():.3e}"
+    error = f"{data.std():.3e}"
+    print(f"{method}: {measure}({error})")
