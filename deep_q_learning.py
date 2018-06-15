@@ -29,49 +29,48 @@ def get_sumrule_reward(lstate, rstate):
     return (lstate.energy - rstate.energy) * np.abs(rff.rho_form_factor(lstate, rstate))**2
 
 
-def get_reward_for_large_formfactors(ff, lstate, rstate, N_world):
-    return distance_to_rstate(lstate, rstate)**0.1
+def get_reward_for_close_states(ff, lstate, rstate, N_world):
+    if np.abs(ff) > 0.00001:
+        return np.abs(ff)**0.1
+    elif distance_to_rstate(lstate, rstate) < N_world**0.5:
+        return distance_to_rstate(lstate, rstate)**0.1
+    else:
+        return -1
 
 
+def get_form_factor_reward(lstate, rstate):
+    return np.tanh(np.log1p(np.abs(rff.rho_form_factor(lstate, rstate))**2))
 
-def get_reward_at_final_step(dsf_data, n, no_of_steps, c, L, N, I_max, N_world):
+def get_reward_at_final_step(dsf_data, n, no_of_steps, c, L, N, I_max, N_world, rstate):
     # Quite logical that this does not perform well since it puts all reward into single place, which means learning (if any) is very slow.
     if n == no_of_steps:
-        state = lls.lieb_liniger_state(c, L, N)
-        state.calculate_all()
-        return compute_average_sumrule(dsf_data, state.energy, L, N, I_max, N_world)
+        return compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world)
     else:
         return 0
 
 
-def get_partial_sumrule_reward_at_every_step(dsf_data, c, L, N, lstate):
-    state = lls.lieb_liniger_state(c, L, N)
-    state.calculate_all()
+def get_partial_sumrule_reward_at_every_step(dsf_data, c, L, N, lstate, rstate):
     if lstate.integer_momentum != 0:
-        return left_side(dsf_data[lstate.integer_momentum], state.energy) / right_side(lstate.integer_momentum, L, N)
+        return left_side(dsf_data[lstate.integer_momentum], rstate.energy) / right_side(lstate.integer_momentum, L, N)
     else:
         return 0
 
 
-def get_full_sumrule_reward_at_every_step(dsf_data, c, L, N, I_max, N_world):
-    state = lls.lieb_liniger_state(c, L, N)
-    state.calculate_all()
-    return compute_average_sumrule(dsf_data, state.energy, L, N, I_max, N_world)
+def get_full_sumrule_reward_at_every_step(dsf_data, c, L, N, I_max, N_world, rstate):
+    return compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world)
 
 
-def get_relative_contribution_reward(dsf_data, L, N, I_max, N_world, N_states):
-    return get_full_sumrule_reward_at_every_step(dsf_data, L, N, I_max, N_world) / N_states
+def get_relative_contribution_reward(dsf_data, L, N, I_max, N_world, N_states, rstate):
+    return get_full_sumrule_reward_at_every_step(dsf_data, L, N, I_max, N_world, rstate) / N_states
 
 
-def get_reward_delta_sumrule(dsf_data, L, N, I_max, N_world, prev_sumrule):
-    return get_full_sumrule_reward_at_every_step(dsf_data, L, N, I_max, N_world) - prev_sumrule
+def get_reward_delta_sumrule(dsf_data, L, N, I_max, N_world, prev_sumrule, rstate):
+    return get_full_sumrule_reward_at_every_step(dsf_data, L, N, I_max, N_world, rstate) - prev_sumrule
 
 
-def get_relative_reward_per_slice(dsf_data, c, L, N, k):
-    state = lls.lieb_liniger_state(c, L, N)
-    state.calculate_all()
+def get_relative_reward_per_slice(dsf_data, c, L, N, k, rstate):
     if k != 0:
-        return left_side(dsf_data[k], state.energy) / right_side(k, L, N) / len(dsf_data[k])
+        return left_side(dsf_data[k], rstate.energy) / right_side(k, L, N) / len(dsf_data[k])
     else:
         return 0
 
@@ -89,7 +88,6 @@ def epsilon_greedy(qval, state, previously_visited, epsilon, max_I, N_world, N, 
         allowed_actions = get_allowed_indices(state, N_world)
         np.random.shuffle(allowed_actions)
         return select_action(allowed_actions, state, previously_visited, max_I, N_world, N, check_no_of_pairs)
-
     else:
         return select_action(list(zip(*np.unravel_index(qval[0].argsort(), (N_world, N_world)))), state, previously_visited, max_I, N_world, N, check_no_of_pairs)
 
@@ -125,15 +123,16 @@ def q_learning(N_world, I_max, c, L, N, gamma=0.975, alpha=1, epochs=100, epsilo
                 dsf_data[new_lstate.integer_momentum] = [new_lstate]
 
             # reward = get_sumrule_reward(new_lstate, rstate)
-            reward = get_reward_for_large_formfactors(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
+            reward = get_reward_for_close_states(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
+            # reward = get_form_factor_reward(new_lstate, rstate)
 
-            # reward = get_reward_at_final_step(dsf_data, i, no_of_steps, c, L, N, I_max, N_world)
-            # reward = get_partial_sumrule_reward_at_every_step(dsf_data, c, L, N, new_lstate)
+            # reward = get_reward_at_final_step(dsf_data, i, no_of_steps, c, L, N, I_max, N_world, rstate)
+            # reward = get_partial_sumrule_reward_at_every_step(dsf_data, c, L, N, new_lstate, rstate)
 
-            # reward = get_full_sumrule_reward_at_every_step(dsf_data, c, L, N, I_max, N_world)
-            # reward = get_relative_contribution_reward(dsf_data, L, N, I_max, N_world, n)
-            # reward = get_reward_delta_sumrule(dsf_data, L, N, I_max, N_world, previous_sumrule)
-            # reward = get_relative_reward_per_slice(dsf_data, c, L, N, I_max, N_world, new_lstate.integer_momentum)
+            # reward = get_full_sumrule_reward_at_every_step(dsf_data, c, L, N, I_max, N_world, rstate)
+            # reward = get_relative_contribution_reward(dsf_data, L, N, I_max, N_world, n, rstate)
+            # reward = get_reward_delta_sumrule(dsf_data, L, N, I_max, N_world, previous_sumrule, rstate)
+            # reward = get_relative_reward_per_slice(dsf_data, c, L, N, I_max, N_world, new_lstate.integer_momentum, rstate)
 
 
             new_Q = model.predict(new_state.reshape(1, -1), batch_size=1)
@@ -157,8 +156,8 @@ def q_learning(N_world, I_max, c, L, N, gamma=0.975, alpha=1, epochs=100, epsilo
 
             prev_sumrule = compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False)
 
-            sys.stdout.write(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False):.10f}, best sumrule: {highest_achieved_sumrule:.10f}\r")
-            sys.stdout.flush()
+            # sys.stdout.write(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False):.10f}, best sumrule: {highest_achieved_sumrule:.10f}\r")
+            # sys.stdout.flush()
 
         if epsilon > 0.1:
             epsilon -= 1 / epochs
