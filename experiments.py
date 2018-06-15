@@ -15,14 +15,10 @@ from calculate_dsf import *
 L = N = 5
 Imax = 12
 c = 1
-rand = False
-check_no_of_pairs_in_training = False
-check_no_of_pairs_in_evaluation = True
-
 
 N_world = 2 * Imax + 1
 
-def experiment(no_of_iterations):
+def experiment(no_of_iterations, rand, check_no_of_pairs_in_training, check_no_of_pairs_in_evaluation):
     saturation_histories = []
     sumrules_saturations = []
     mid_points = []
@@ -55,26 +51,28 @@ def experiment(no_of_iterations):
             save_ff = True
         else:
             save_ff = False
-        mid, coeff = visualize_form_factor_sizes(form_factors, save=save_ff)
+        mid, coeff = visualize_form_factor_sizes(form_factors, save=save_ff, filename=f"ff_sizes_rand_{rand}_check_train_{check_no_of_pairs_in_training}_check_eval_{check_no_of_pairs_in_evaluation}")
         mid_points.append(mid)
         coefficients.append(coeff)
 
         # visualize_sumrule_per_contributing_state(dsfs, refstate.energy, L, N, xlim=[-Imax-1, Imax+1], save=False)
 
-        if model:
-            lstate = map_to_entire_space(lieb_liniger_state(c, L, N).Is, Imax)
-            visualize_state(lstate, save=False)
+        # if model:
+        #     lstate = map_to_entire_space(lieb_liniger_state(c, L, N).Is, Imax)
+        #     visualize_state(lstate, save=False)
 
-            pred = model.predict(lstate.reshape(1,-1)).reshape(N_world, N_world)
+        #     pred = model.predict(lstate.reshape(1,-1)).reshape(N_world, N_world)
 
-            visualize_q_function(pred, save=False)
-            visualize_q_function(pred, generate_overlay(pred, "lowest", 30, N_world), save=False)
-            visualize_q_function(pred, generate_overlay(pred, "highest", 30, N_world), save=False)
+        #     visualize_q_function(pred, save=False)
+        #     visualize_q_function(pred, generate_overlay(pred, "lowest", 30, N_world), save=False)
+        #     visualize_q_function(pred, generate_overlay(pred, "highest", 30, N_world), save=False)
 
-    visualize_saturation_history(saturation_histories, save=True)
-    measure_with_error(np.array(mid_points), "mid")
-    measure_with_error(np.array(coefficients), "coeff",)
-    measure_with_error(np.array(sumrules_saturations), "sum rule")
-    measure_with_error(np.array(steps_to_convergence), "steps to convergence")
+    visualize_saturation_history(saturation_histories, save=True, filename=f"saturation_histories_rand_{rand}_check_train_{check_no_of_pairs_in_training}_check_eval_{check_no_of_pairs_in_evaluation}")
+    with open("experimental_data.txt", "a") as data_file:
+        data_file.write(f"rand_{rand}_check_train_{check_no_of_pairs_in_training}_check_eval_{check_no_of_pairs_in_evaluation}\n")
+        data_file.write(f"mid {mid_points}\n")
+        data_file.write(f"coeff {coeff}\n")
+        data_file.write(f"sum rule {sumrules_saturations}\n")
+        data_file.write(f"steps_to_convergence {steps_to_convergence}\n \n \n")
 
 

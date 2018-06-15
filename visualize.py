@@ -88,7 +88,7 @@ def visualize_sumrule_per_contributing_state(data, ref_energy, L, N, xlim, save=
         plt.savefig("saturations_over_states.pdf", bbox='tight')
     plt.show()
 
-def visualize_form_factor_sizes(form_factors, include_ordered=True, include_trend=True, save=True, name="ffsizes"):
+def visualize_form_factor_sizes(form_factors, include_ordered=True, include_trend=True, save=True, filename=""):
     """Input should be in 'raw' form, i.e. the complex form factors. ABACUS outputs real(FF)^2."""
     plt.semilogy(np.abs(form_factors)**2, 'ro', markersize=1)
     if include_ordered:
@@ -107,7 +107,7 @@ def visualize_form_factor_sizes(form_factors, include_ordered=True, include_tren
     plt.xlabel("Order in computation")
     plt.ylabel("Square form factor")
     if save:
-        plt.savefig(f"{name}.pdf")
+        plt.savefig(f"{filename}.pdf")
     plt.show()
 
     return np.exp(p(int(len(form_factors)/2))), np.exp(polynomial[1])
@@ -155,7 +155,7 @@ def generate_overlay(prediction, overlay_type, number, N_world):
 
     return overlay
 
-def visualize_saturation_history(saturations, save=False):
+def visualize_saturation_history(saturations, save=False, filename=""):
     for hist in saturations:
         plt.plot(hist)
     sns.despine()
@@ -163,5 +163,5 @@ def visualize_saturation_history(saturations, save=False):
     plt.xlabel("Order in computation")
     plt.ylabel("Total sum rule saturation")
     if save:
-        plt.savefig("saturation_history.pdf")
+        plt.savefig(f"{filename}.pdf")
     plt.show()
