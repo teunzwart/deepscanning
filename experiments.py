@@ -71,7 +71,7 @@ def experiment(no_of_iterations, rand, check_no_of_pairs_in_training, check_no_o
     with open("experimental_data.txt", "a") as data_file:
         data_file.write(f"rand_{rand}_check_train_{check_no_of_pairs_in_training}_check_eval_{check_no_of_pairs_in_evaluation}\n")
         data_file.write(f"mid {mid_points}\n")
-        data_file.write(f"coeff {coeff}\n")
+        data_file.write(f"coeff {coefficients}\n")
         data_file.write(f"sum rule {sumrules_saturations}\n")
         data_file.write(f"steps_to_convergence {steps_to_convergence}\n \n \n")
 
