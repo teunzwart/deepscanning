@@ -68,7 +68,7 @@ def visualize_sumrule_per_contributing_state(data, ref_energy, L, N, xlim, save=
             dsf_per_slice.append(sr.left_side(states, ref_energy) / sr.right_side(momentum, L, N))
             dsf_per_state.append(sr.left_side(states, ref_energy) / sr.right_side(momentum, L, N) / len(states))
 
-    plt.bar(momenta, dsf_per_slice, color="b")
+    plt.bar(momenta, dsf_per_slice)
     plt.xlabel("Integer momentum")
     plt.ylabel("Sum rule saturation")
     plt.xlim(xlim)
