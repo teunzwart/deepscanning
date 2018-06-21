@@ -126,19 +126,56 @@ double hole_displacement(double lambda, double lambda_h, double c, double lambda
     return non_integral_part + integral;
 }
 
-int main() {
-    double lambda_f = 1.425;
+void create_lf_data() {
+    double lambda_prime = 0;
+    double lambda_f = 1;
+    double c_iteration = 1;
+
+    std::vector<double> lf(static_cast<std::vector<double>::size_type>(lambda_f * 2 / 0.01 + 1));
+    for (std::vector<double>::size_type i = 0 ; i != lf.size(); i++) {
+        lf[i] = particle_displacement(-lambda_f + 0.01 * i, lambda_prime, c_iteration, lambda_f) / calculate_rho_gs(-lambda_f + 0.01 * i, lambda_f, 1);
+    }
+    for (auto lfi: lf) {
+        std::cout << lfi << ", ";
+    }
+
+    std::cout << "\n\n\n" << std::endl;
+}
+
+void create_Dp_data() {
+    double lambda_f = 1;
+    double lambda_p = 1.5 ;
+    double c_iteration = 1;
 
     std::vector<double> dps(static_cast<std::vector<double>::size_type>(lambda_f * 2 / 0.01 + 1));
     for (std::vector<double>::size_type i = 0 ; i != dps.size(); i++) {
-        dps[i] = particle_displacement(-lambda_f + 0.01 * i, 1, 1, lambda_f) / calculate_rho_gs(-lambda_f + 0.01 * i, lambda_f, 1);
+        dps[i] = particle_displacement(-lambda_f + 0.01 * i, lambda_p, c_iteration, lambda_f) / calculate_rho_gs(-lambda_f + 0.01 * i, lambda_f, 1);
     }
     for (auto dpi: dps) {
         std::cout << dpi << ", ";
     }
-
     std::cout << "\n\n\n" << std::endl;
-    
+
+}
+
+void create_Dh_data() {
+    double lambda_f = 1;
+    double lambda_h = 0.5;
+    double c_iteration = 1;
+
+    std::vector<double> dps(static_cast<std::vector<double>::size_type>(lambda_f * 2 / 0.01 + 1));
+    for (std::vector<double>::size_type i = 0 ; i != dps.size(); i++) {
+        dps[i] = particle_displacement(-lambda_f + 0.01 * i, lambda_h, c_iteration, lambda_f) / calculate_rho_gs(-lambda_f + 0.01 * i, lambda_f, 1);
+    }
+    for (auto dpi: dps) {
+        std::cout << dpi << ", ";
+    }
+    std::cout << "\n\n\n" << std::endl;
+
+}
+
+void create_rho_data() {
+    double lambda_f = 1;
     std::vector<double> rhos(static_cast<std::vector<double>::size_type>(lambda_f * 2 / 0.01 + 1));
     for (std::vector<double>::size_type i = 0 ; i != rhos.size(); i++) {
         rhos[i] = calculate_rho_gs(-lambda_f + 0.01 * i, lambda_f, 1);
@@ -147,4 +184,10 @@ int main() {
         std::cout << rho << ", ";
     }
     std::cout << std::endl;
+}
+
+int main() {
+    // create_lf_data();
+    create_Dp_data();
+    // create_Dh_data();
 }
