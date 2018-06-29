@@ -33,7 +33,7 @@ def get_reward_for_close_states(ff, lstate, rstate, N_world):
     if np.abs(ff) > 0.00001:
         return np.abs(ff)**0.1
     elif distance_to_rstate(lstate, rstate) < N_world**0.5:
-        return distance_to_rstate(lstate, rstate)**0.1
+        return 1 / distance_to_rstate(lstate, rstate)**0.1
     else:
         return -1
 
@@ -77,10 +77,8 @@ def get_relative_reward_per_slice(dsf_data, c, L, N, k, rstate):
 
 def distance_to_rstate(lstate, rstate):
     """Calculate the 'distance' between lstate and rstate."""
-    distance = 0
-    for i, n in enumerate(np.argwhere(np.array(rstate) == 1)):
-        distance += np.abs(n[0] - np.where(np.array(lstate) == 1)[0][i])
-    return distance
+    return np.sum(np.abs(lstate.Is - rstate.Is))
+
 
 
 def epsilon_greedy(qval, state, previously_visited, epsilon, max_I, N_world, N, check_no_of_pairs=True):
@@ -123,7 +121,7 @@ def q_learning(N_world, I_max, c, L, N, gamma=0.975, alpha=1, epochs=100, epsilo
                 dsf_data[new_lstate.integer_momentum] = [new_lstate]
 
             # reward = get_sumrule_reward(new_lstate, rstate)
-            reward = get_reward_for_close_states(new_lstate.ff, new_state, map_to_entire_space(rstate.Is, I_max), N_world)
+            reward = get_reward_for_close_states(new_lstate.ff, new_lstate, rstate, N_world)
             # reward = get_form_factor_reward(new_lstate, rstate)
 
             # reward = get_reward_at_final_step(dsf_data, i, no_of_steps, c, L, N, I_max, N_world, rstate)
@@ -144,9 +142,9 @@ def q_learning(N_world, I_max, c, L, N, gamma=0.975, alpha=1, epochs=100, epsilo
             y[:] = Q[:]
 
             if n == no_of_steps:
-                update = alpha * reward
+                update = reward
             else:
-                update = alpha * (reward + gamma * new_max_Q)
+                update = (reward + gamma * new_max_Q)
 
             y[0][new_best_action] = (1 - alpha) * y[0][new_best_action] + alpha * update
             # A batch size 1 makes a huge positive difference in learning performance (probably because there is less overfitting to the single data point).
@@ -156,8 +154,8 @@ def q_learning(N_world, I_max, c, L, N, gamma=0.975, alpha=1, epochs=100, epsilo
 
             prev_sumrule = compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False)
 
-            # sys.stdout.write(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False):.10f}, best sumrule: {highest_achieved_sumrule:.10f}\r")
-            # sys.stdout.flush()
+            sys.stdout.write(f"epoch: {i:{len(str(epochs))}}, n={n:{len(str(no_of_steps))}}, current sumrule: {compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world, print_all=False):.10f}, best sumrule: {highest_achieved_sumrule:.10f}\r")
+            sys.stdout.flush()
 
         if epsilon > 0.1:
             epsilon -= 1 / epochs
