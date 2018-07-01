@@ -70,6 +70,11 @@ def no_of_particle_hole_pairs(state, reference_state, N):
 
 
 def select_action(available_actions, state, previously_visited_states, max_I, N_world, N, check_no_of_pairs=True):
+    """
+    Select the action with the highest Q-value, subject to constraint.
+    
+    Contraints are: sum below max_I, not previously visited, minimal number of ph-pairs (optional)
+    """
     no_of_ph_per_action = []
 
     for action in available_actions:
@@ -85,6 +90,7 @@ def select_action(available_actions, state, previously_visited_states, max_I, N_
                         continue
                 else:
                     return new_state, action
+
 
     return sorted(no_of_ph_per_action, key=lambda x: x[0])[0][1]
 
