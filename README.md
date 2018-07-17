@@ -1,4 +1,11 @@
 # Deep Scanning
 
-A proof of concept for solving Bethe Ansatz equations for the Lieb-Liniger model using machine learning as well as exploring the Lieb-Liniger state space.
+This repository contains the code used in my theoretical physics master's thesis titled "Summing matrix elements of the Lieb-Liniger model with reinforcement learning", which you can find [here](https://github.com/teunzwart/master_thesis).
+
+To compile the C++ code, use
+
+``` shell
+clang++ -std=c++17 displacement.cpp -o displacement
+```
+
 
