@@ -1,4 +1,9 @@
-"""Based in part on http://outlace.com/rlpart3.html"""
+"""
+Based in part on http://outlace.com/rlpart3.html
+
+I used this as a way to understand Q-learning, 
+and then wrote my version based on this.
+"""
 
 import sys
 
@@ -56,7 +61,7 @@ def get_partial_sumrule_reward_at_every_step(dsf_data, c, L, N, lstate, rstate):
         return 0
 
 
-def get_full_sumrule_reward_at_every_step(dsf_data, c, L, N, I_max, N_world, rstate):
+def get_full_sumrule_reward_at_every_step(dsf_data, L, N, I_max, N_world, rstate):
     return compute_average_sumrule(dsf_data, rstate.energy, L, N, I_max, N_world)
 
 
