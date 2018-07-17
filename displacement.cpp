@@ -19,7 +19,7 @@ double hole_displacement(double lambda, double lambda_h, double c, double lambda
  * Calculate the Lieb-Liniger kernel
  */
 double kernel(const double k, const double c) {
-    return c / PI * 1 / (k * k + c * c);
+    return 2 * c / (k * k + c * c);
 }
 
 /**
@@ -47,22 +47,6 @@ int sign(const T x) {
 
 
 /**
- * Iteratively calculate the groundstate density for the Lieb-Liniger model.
- */
-double calculate_rho_gs(const double lambda, const double lambda_f, const double c) {
-    double rho = 1 / (2 * PI);
-    double integral = 1 / PI * (atan((lambda_f - lambda) / c) + atan((lambda_f + lambda) / c));
-
-    double prev_rho = 1;
-    while (abs(rho - prev_rho) > pow(10, -6)) {
-        prev_rho = rho;
-        rho = rho * integral + 1 / (2 * PI);
-    }
-    return rho;
-}
-
-
-/**
  * Calculate the inverse of the truncated kernel L^(F) iteratively.
  */
 double calculate_lf(const double lambda, const double lambda_prime, const double c, const double lambda_f, double precision=pow(10, -6)) {
@@ -72,7 +56,7 @@ double calculate_lf(const double lambda, const double lambda_prime, const double
     }
     double prev_lf = 1;
     double truncated_kernel =  kernel(lambda - lambda_prime, c);
-    double integral = 1 / PI * (atan((lambda_prime + lambda_f) / c) - atan((lambda_prime - lambda_f) / c));
+    double integral = -2 * (atan((lambda_prime + lambda_f) / c) - atan((lambda_prime - lambda_f) / c));
     
     double lf = truncated_kernel;
 
@@ -129,11 +113,11 @@ double hole_displacement(double lambda, double lambda_h, double c, double lambda
 void create_lf_data() {
     double lambda_prime = 0;
     double lambda_f = 1;
-    double c_iteration = 1;
+    double c_iteration = 4;
 
     std::vector<double> lf(static_cast<std::vector<double>::size_type>(lambda_f * 2 / 0.01 + 1));
     for (std::vector<double>::size_type i = 0 ; i != lf.size(); i++) {
-        lf[i] = particle_displacement(-lambda_f + 0.01 * i, lambda_prime, c_iteration, lambda_f) / calculate_rho_gs(-lambda_f + 0.01 * i, lambda_f, 1);
+        lf[i] = particle_displacement(-lambda_f + 0.01 * i, lambda_prime, c_iteration, lambda_f) ;
     }
     for (auto lfi: lf) {
         std::cout << lfi << ", ";
@@ -145,11 +129,11 @@ void create_lf_data() {
 void create_Dp_data() {
     double lambda_f = 1;
     double lambda_p = 1.5 ;
-    double c_iteration = 1;
+    double c_iteration = 4;
 
     std::vector<double> dps(static_cast<std::vector<double>::size_type>(lambda_f * 2 / 0.01 + 1));
     for (std::vector<double>::size_type i = 0 ; i != dps.size(); i++) {
-        dps[i] = particle_displacement(-lambda_f + 0.01 * i, lambda_p, c_iteration, lambda_f) / calculate_rho_gs(-lambda_f + 0.01 * i, lambda_f, 1);
+        dps[i] = particle_displacement(-lambda_f + 0.01 * i, lambda_p, c_iteration, lambda_f) ;
     }
     for (auto dpi: dps) {
         std::cout << dpi << ", ";
@@ -161,11 +145,11 @@ void create_Dp_data() {
 void create_Dh_data() {
     double lambda_f = 1;
     double lambda_h = 0.5;
-    double c_iteration = 1;
+    double c_iteration = 4;
 
     std::vector<double> dps(static_cast<std::vector<double>::size_type>(lambda_f * 2 / 0.01 + 1));
     for (std::vector<double>::size_type i = 0 ; i != dps.size(); i++) {
-        dps[i] = particle_displacement(-lambda_f + 0.01 * i, lambda_h, c_iteration, lambda_f) / calculate_rho_gs(-lambda_f + 0.01 * i, lambda_f, 1);
+        dps[i] = particle_displacement(-lambda_f + 0.01 * i, lambda_h, c_iteration, lambda_f);
     }
     for (auto dpi: dps) {
         std::cout << dpi << ", ";
@@ -174,20 +158,8 @@ void create_Dh_data() {
 
 }
 
-void create_rho_data() {
-    double lambda_f = 1;
-    std::vector<double> rhos(static_cast<std::vector<double>::size_type>(lambda_f * 2 / 0.01 + 1));
-    for (std::vector<double>::size_type i = 0 ; i != rhos.size(); i++) {
-        rhos[i] = calculate_rho_gs(-lambda_f + 0.01 * i, lambda_f, 1);
-    }
-    for (auto rho: rhos) {
-        std::cout << rho << ", ";
-    }
-    std::cout << std::endl;
-}
-
 int main() {
     // create_lf_data();
-    create_Dp_data();
-    // create_Dh_data();
+    // create_Dp_data();
+    create_Dh_data();
 }
