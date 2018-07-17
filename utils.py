@@ -96,6 +96,6 @@ def select_action(available_actions, state, previously_visited_states, max_I, N_
 
 
 def measure_with_error(data, method):
-    measure = f"{data.mean():.3e}"
-    error = f"{data.std():.3e}"
-    print(f"{method}: {measure}({error})")
+    measure = f"{data.mean():.0f}"
+    error = f"{data.std():.0f}"
+    print(f"{method}: \\num{{{measure} \\pm {error}}}")
